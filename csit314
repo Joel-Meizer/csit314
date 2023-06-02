@@ -1,0 +1,3369 @@
+$services = @(
+        "Painting";
+        "Fence Installation";
+        "Roof Cleaning";
+        "Carpet Installation";
+        "Flooring repairs";
+        "Tile repairs";
+    )
+
+$count = 0
+
+Function AcceptRequest($requestID, $tradieName, $requestArray, $directory)
+{
+    $dirPath = $directory
+    $DbName = "CSIT314 Database.accdb"
+    $Db = Join-Path $dirPath $DbName
+    [Array]$allRequests = GetAllNewRequests -directory $directory
+    $allRequests = $allRequests | Select *| Where {$_.requestID -eq $requestID}
+    foreach($request in $allRequests){$request.tradie = $tradieName; $request.status = "Accepted"}
+    Fill-Database-Requests -Db $Db -requestArray $allRequests -directory $directory
+    $connection = New-Object -ComObject ADODB.Connection
+    if([Environment]::Is64BitProcess){
+        Write-Host "64Bit version of Powershell"
+        $connection.Open("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$Db")
+    }
+    else
+    {
+        Write-Host "32Bit of Powershell"
+        $connection.Open("Provider= Microsoft.Jet.OLEDB.4.0;Data Source=$Db" )
+    }
+    $command = "DELETE * FROM NewRequests WHERE [Request ID] = $requestID"
+    $connection.Execute($command)
+    $connection.close()
+
+}
+
+Function createTradies($newUsername, $newPassword, $newExperience, $newAge, $newName, $directory)
+{
+    class Tradie {
+        [int]$ID
+        [String]$Name
+        [int]$age
+        [int]$experience
+        [String]$location
+        [String]$userName
+        [String]$password
+    }
+
+    $tradie = @(
+        "Joel Meizer";
+        "John Doe";
+        "Alex Smith";
+        "Jack Brown";
+        "Dan Clarke";
+        "Ricardo Cooley";
+        "Ted Dodd";
+        "Deb Moses";
+        "Dwayne Grant";
+        "Garrett Fleming";
+        "Doug Carlson";
+        "Clarence Lawson";
+        "Sam Waller";
+        "Joseph Reilly";
+        "Justin James";
+        "Billy Sosa";
+        "Alex Babosa";
+        "Alejandro Lambert";
+        "Bryan Cooper";
+        "Marco Chaney";
+    )
+
+    $locations = @(
+        "Lindfurt, Alaska, United States"
+        "New Wellingtonland, Wyoming, United States"
+        "West Hilbert, Rhode Island, United States"
+        "West Jaspermouth, Pennsylvania, United States"
+        "Romantown, Oklahoma, United States"
+        "Boscoside, West Virginia, United States"
+        "East Tiannaburgh, Arizona, United States"
+        "Waterston, New York, United States"
+        "New Margie, Kentucky, United States"
+        "Blockland, Vermont, United States"
+    )
+
+    [Array]$tradieArray
+    try{
+        [Array]$tradieArray += GetAllTradies -directory $directory
+    }
+    catch
+    {
+     Write-Host "No Tradies exist yet"
+    }
+    $count = 1
+    $locationCount = 0
+    if($tradieArray.count -eq 0)
+    {
+        foreach($name in $tradie)
+        {
+            $tradie = [Tradie]::new()
+            $tradie.ID = $count
+            $tradie.Name = $name
+            $tradie.userName, $tradie.password = $name -split(' ')
+            $tradie.age = Get-Random -Minimum 20 -Maximum 40
+            $tradie.experience = Get-Random -Minimum 1 -Maximum 100
+            $tradie.location = $locations[$locationCount]
+            if($locationCount -eq 9)
+            {
+                $locationCount = 0
+            }
+            else{$locationCount++}
+            $tradieArray += $tradie
+            $count++
+        }
+    }
+    elseif($tradieArray.count -ne 0)
+    {
+        if($newName -ne "" -and $newUsername -ne "" -and $newPassword -ne "" -and $newAddress -ne "" -and $newAge -ne $null -and $newExperience -ne $null)
+        {
+            $tradie = [Tradie]::new()
+            $tradie.ID = $tradieArray.count + 1
+            $tradie.Name = $newName
+            $tradie.userName = $newUsername
+            $tradie.password = $newPassword
+            $tradie.age = $newAge
+            $tradie.experience = $newExperience
+            $dirPath = $directory
+            $DbName = "CSIT314 Database.accdb"
+            $Db = Join-Path $dirPath $DbName
+            $connection = New-Object -ComObject ADODB.Connection
+            if([Environment]::Is64BitProcess){
+                Write-Host "64Bit version of Powershell"
+                $connection.Open("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$Db")
+            }
+            else
+            {
+                Write-Host "32Bit of Powershell"
+                $connection.Open("Provider= Microsoft.Jet.OLEDB.4.0;Data Source=$Db" )
+            }
+            $command = "INSERT INTO Tradies ([ID] ,[Tradie Name], [Age], [Experience], [Username], [Password]) VALUES ('$($tradie.ID)', '$($tradie.Name)', '$($tradie.age)', '$($tradie.experience)', '$($tradie.userName)', '$($tradie.password)')"
+            $connection.Execute($command)
+            $connection.close()
+            $tradieArray += $tradie
+        }
+        else{Write-Host "Tradie attributes are empty"}
+    }
+    return $tradieArray
+}
+
+Function createClients($newUsername, $newPassword, $newAddress, $newAge, $newName, $directory)
+{
+    class Client{
+        [int]$id
+        [String]$name
+        [int]$age
+        [String]$address
+        [String]$username
+        [String]$password
+    }
+
+    $client = @(
+        "Corneille Leonard"
+        "Kentarō McNeil"
+        "Asier Proulx"
+        "Philipp Havelka"
+        "Eamon MacCoinnich"
+        "Thorbjörn Blum"
+        "Miia Oelberg"
+        "Arsakes Golob"
+        "Aindréas Amoretto"
+        "Debra Gosselin"
+    )
+
+    $addresses = @(
+        "58538 Volkman Ville, Apt. 633, 63044-4109, Lindfurt, Alaska, United States"
+        "3197 Maxwell Forge, Apt. 492, 23220-2937, New Wellingtonland, Wyoming, United States"
+        "6772 Altenwerth Estates, Apt. 830, 14002, West Hilbert, Rhode Island, United States"
+        "9415 Xzavier Station, Suite 405, 85802, West Jaspermouth, Pennsylvania, United States"
+        "058 Arnaldo Hill, Apt. 081, 85076, Romantown, Oklahoma, United States"
+        "657 Mueller Plains, Apt. 760, 93792-1573, Boscoside, West Virginia, United States"
+        "26494 Maryam Club, Suite 458, 16253, East Tiannaburgh, Arizona, United States"
+        "25773 Eliseo Plains, Suite 884, 52841, Waterston, New York, United States"
+        "95995 Maddison Lights, Apt. 147, 69868, New Margie, Kentucky, United States"
+        "69732 Little Plains, Suite 548, 05254-6139, Blockland, Vermont, United States"
+    )
+
+    [Array]$clientArray
+    try{
+        [Array]$clientArray += GetAllClients -directory $directory
+    }
+    catch
+    {
+     Write-Host "No Clients exist yet"
+    }
+
+    $count = 1
+    $locationCount = 0
+    if($clientArray.count -eq 0)
+    {
+        foreach($name in $client)
+        {
+            $client = [Client]::new()
+            $client.ID = $count
+            $client.Name = $name
+            $client.userName, $client.password = $name -split(' ')
+            $client.age = Get-Random -Minimum 20 -Maximum 60
+            $client.address = $addresses[$locationCount]
+            $clientArray += $client
+            $locationCount++
+            $count++
+        }
+    }
+    elseif($clientArray.count -ne 0)
+    {
+        if($newName -ne "" -and $newUsername -ne "" -and $newPassword -ne "" -and $newAddress -ne "" -and $newAge -ne $null)
+        {
+            $client = [Client]::new()
+            $client.ID = $clientArray.count + 1
+            $client.Name = $newName
+            $client.userName = $newUsername
+            $client.password = $newPassword
+            $client.age = $newAge
+            $client.address = $newAddress
+            $dirPath = $directory
+            $DbName = "CSIT314 Database.accdb"
+            $Db = Join-Path $dirPath $DbName
+            $connection = New-Object -ComObject ADODB.Connection
+            if([Environment]::Is64BitProcess){
+                Write-Host "64Bit version of Powershell"
+                $connection.Open("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$Db")
+            }
+            else
+            {
+                Write-Host "32Bit of Powershell"
+                $connection.Open("Provider= Microsoft.Jet.OLEDB.4.0;Data Source=$Db" )
+            }
+            $command = "INSERT INTO Clients ([ID] ,[Client Name], [Age], [Location], [Username], [Password]) VALUES ('$($client.ID)', '$($client.Name)', '$($client.age)', '$($client.address)', '$($client.userName)', '$($client.password)')"
+            $connection.Execute($command)
+            $connection.close()
+            $clientArray += $client
+        }
+        else{Write-Host "Client attributes are empty"}
+    }
+    return $clientArray
+}
+
+Function createRequests($services, $tradieArray, $clientArray, $directory, $selectedType, $selectedClient, $selectedTradie, $newLocation, $newCost, $type)
+{
+
+    class Request {
+    [int]$requestID
+    [String]$client
+    [String]$location
+    [String]$type
+    [String]$tradie
+    [int]$jobCost
+    [String]$status
+    [DateTime]$createDate
+    [DateTime]$dueDate
+    }
+
+    $statuses = @("Accepted", "Declined", "Active", "Scheduled", "Completed")
+
+    try{
+        [Array]$requests += GetAllRequests -directory $directory
+    }
+    catch
+    {
+     Write-Host "No Requests exist yet"
+    }
+
+    try{
+        [Array]$newRequests += GetAllNewRequests -directory $directory
+    }
+    catch
+    {
+     Write-Host "No Requests exist yet"
+    }
+
+    if($requests.Count -eq 0)
+    {
+        $tradies = @()
+        $tradies = $tradieArray
+        $clients = @()
+        $clients = $clientArray
+        $requests = @()
+        for ($i = 1; $i -le 100; $i++) {
+            $randomTradie = Get-Random -Minimum 0 -Maximum 20
+            $randomService = Get-Random -Minimum 0 -Maximum 6
+            $randomClient = Get-Random -Minimum 0 -Maximum 10
+            $randomID = Get-Random -Minimum 1000000 -Maximum 10000000
+            $randomStatus = Get-Random -Minimum 0 -Maximum 5
+            $request = [Request]::new()
+            $request.requestID = $randomID
+            $request.type = $services[$randomService]
+            $request.client = $clients.name[$randomClient]
+            $request.tradie = $tradies.Name[$randomTradie]
+            $request.status = $statuses[$randomStatus]
+            $randomDate = Get-Random -Minimum 0 -Maximum 5
+            $randomDue = Get-Random -Minimum 5 -Maximum 15
+            $request.createDate = (Get-Date).AddDays(-$randomDate)
+            $request.dueDate = (Get-Date).AddDays(-$randomDue)
+            #$request.location = GetLocation -directory $directory -Value $request.tradie
+            if($randomService -eq 1){$request.jobCost = 2200}
+            elseif($randomService -eq 0){$request.jobCost = 1400}
+            elseif($randomService -eq 2){$request.jobCost = 1000}
+            elseif($randomService -eq 3){$request.jobCost = 3000}
+            elseif($randomService -eq 4){$request.jobCost = 1300}
+            elseif($randomService -eq 5){$request.jobCost = 1000}
+            elseif($randomService -eq 6){$request.jobCost = 1200}
+            $requests += $request
+        }
+    }
+    elseif($requests.count -ne 0)
+    {
+        if($selectedType -ne "" -and $selectedClient -ne "" -and $selectedTradie -ne "" -and $newLocation -ne "" -and $newCost -ne 0 -and $type -eq "newRequest")
+        {
+            $requestID = Get-Random -Minimum 1000000 -Maximum 10000000
+            $Request = [Request]::new()
+            $Request.requestID = $requestID
+            $Request.client = $selectedClient
+            $Request.location = $newLocation
+            $Request.jobCost = $newCost
+            $Request.type = $selectedType
+            $Request.tradie = $selectedTradie
+            $Request.status = "Pending"
+            $Request.createDate = Get-Date
+            $Request.dueDate = Get-Date
+            $dirPath = $directory
+            $DbName = "CSIT314 Database.accdb"
+            $Db = Join-Path $dirPath $DbName
+            $connection = New-Object -ComObject ADODB.Connection
+            if([Environment]::Is64BitProcess){
+                Write-Host "64Bit version of Powershell"
+                $connection.Open("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$Db")
+            }
+            else
+            {
+                Write-Host "32Bit of Powershell"
+                $connection.Open("Provider= Microsoft.Jet.OLEDB.4.0;Data Source=$Db" )
+            }
+            $command = "INSERT INTO NewRequests ([Request ID] ,[Service Type], [Client Name], [Location], [Tradie Assigned], [Job Cost], [Status], [Create Date], [Due Date]) VALUES ('$($Request.requestID)', '$($Request.type)', '$($Request.client)', '$($Request.location)', '$($Request.tradie)', '$($Request.jobCost)', '$($Request.status)', '$($Request.createDate)', '$($Request.dueDate)')"
+            $connection.Execute($command)
+            $connection.close()
+            $requests += $Request
+        }
+        
+        else{Write-Host "Request attributes are empty"}
+    }
+    return $requests
+}
+
+Function FormatRequest($request) {
+    $formattedRequest = @"
+Request ID: $($request.requestID)
+Request Location: $($request.location)
+Request Type: $($request.type)
+Request Client: $($request.client)
+Request Tradie: $($request.tradie)
+Request Cost: $($request.jobCost)
+Request Status: $($request.status)
+Create Date: $($request.createDate.ToString("MM/dd/yyyy HH:mm:ss"))
+Due Date: $($request.dueDate)
+-------------------------------
+"@
+
+    return $formattedRequest
+}
+
+Function printData($requests, $clientArray, $directory, $newRequest, $type)
+{
+    $printedArray = @()
+    if($type -ne "NewRequest")
+    {
+        foreach($request in $requests)
+        {
+            if($request.requestID -ne $null)
+            {
+                Write-Host "$request"
+                $requestId = $request.requestID
+                $requestType = $request.type
+                $requestClient = $request.client
+                foreach($client in $clientArray)
+                {
+                    if($requestClient -eq $client.Name)
+                    {
+                        try{
+                        $request.location = GetLocation -directory $directory -value $client.name
+                        }catch{}
+                    }
+                }
+                $requestLocation = $request.location
+                $requestTradie = $request.tradie
+                $requestCost = $request.jobCost
+                $requestStatus = $request.status
+                $requestCreate = $request.createDate
+                $requestDue = $request.dueDate
+                $outputString = "Request ID: $requestID`r`nRequest Type: $requestType`r`nRequest Client: $requestClient `r`nRequest Location: $requestLocation `r`nRequest Tradie: $requestTradie`r`nRequest Cost: $requestCost`r`nRequest Status: $requestStatus `r`nCreate Date: $requestCreate`r`nDue Date: $requestDue`r`n------------------------------------------------------------------------------`r`n"
+                $printedArray += $outputString
+            }
+            else{}
+        }
+    }
+    else
+    {
+        foreach($request in $newRequest)
+        {
+            $formattedRequest = FormatRequest -request $request
+            $printedArray += $formattedRequest
+        }
+    }
+    return $printedArray
+}   
+
+Function filterSearch($requests, $value)
+{
+    $filteredArrayOfServices = @()
+    $value--
+    foreach($req in $requests)
+    {
+       if($req.requestID -eq $value)
+       {
+           $filteredArrayOfServices += $req
+       } 
+       $outputString = printData -requests $filteredArrayOfServices
+    }
+    return $outputString
+}
+
+Function filterbyTradie($requests, $value, $tradieArray, $directory)
+{
+    $filteredArrayOfServices = @()
+    $requestArray = @()
+    $requestArray = $requests
+    $tradiesArray = @()
+    $tradiesArray = $tradieArray
+    $outputString = ""
+    foreach($tradie in $tradiesArray)
+    {
+        Write-Host $tradie.ID
+        if($tradie.ID -eq $value)
+        {
+            Write-Host $tradie.ID
+            foreach($req in $requests)
+            {
+               if($req.tradie -eq $tradie)
+               {
+                   $filteredArrayOfServices += $req
+               } 
+                $outputString = printData -requests $filteredArrayOfServices
+            }
+        }
+    }
+    return $outputString
+}
+
+Function filterbyClient($requests, $value, $clientArray, $directory)
+{
+    $filteredArrayOfServices = @()
+    $requestArray = @()
+    $requestArray = $requests
+    $clientsArray = @()
+    $clientsArray = $clientArray
+    $outputString = ""
+    foreach($client in $clientsArray)
+    {
+        Write-Host $client.ID
+        if($client.ID -eq $value)
+        {
+            Write-Host $tradie.ID
+            foreach($req in $requests)
+            {
+               if($req.tradie -eq $tradie)
+               {
+                   $filteredArrayOfServices += $req
+               } 
+                $outputString = printData -requests $filteredArrayOfServices
+            }
+        }
+    }
+    return $outputString
+}
+
+Function executeActivity($count, $form, $type)
+{
+    $tradieArray = @()
+    $clientArray = @()
+    $requestArray = @()
+    if($count -eq 0)
+        {
+        $testPath = Test-Path $( Join-Path $([System.Environment]::GetEnvironmentVariable('TEMP')) 'CSIT314 Project')
+        if($testPath -eq $false)
+        {
+            Write-Host "Database not found, writing Database to $directory"
+            $directory = New-Item -ItemType Directory -Path "$( Join-Path $([System.Environment]::GetEnvironmentVariable('TEMP')) 'CSIT314 Project')"
+            Write-Host "Successfully created Database!"
+            $tradieArray = createTradies -directory $directory
+            $clientArray = createClients -directory $directory
+            $requestArray = createRequests -tradieArray $tradieArray -clientArray $clientArray -directory $directory -services $services
+        }
+        else
+        {
+            $directory = $( Join-Path $([System.Environment]::GetEnvironmentVariable('TEMP')) 'CSIT314 Project')
+            Write-Host "Database already exists, pulling data from $directory"
+            $tradieArray = GetAllTradies -directory $directory
+            $clientArray = GetAllClients -directory $directory
+            $requestArray = GetAllRequests -directory $directory
+        }
+        $count++
+        loginGui -requestArray $requestArray -directory $directory -tradieArray $tradieArray -clientArray $clientArray -services $services
+    }
+    else{
+        if($type -eq "Client")
+        {
+            $form.Hide()
+            $clientArray = GetAllClients -directory $directory
+            $tradieArray = GetAllTradies -directory $directory
+            loginGui -requestArray $requestArray -directory $directory -tradieArray $tradieArray -clientArray $clientArray -services $services
+        }
+        elseif($type -eq "Tradie")
+        {
+            $form.Hide()
+            $tradieArray = GetAllTradies -directory $directory
+            loginGui -requestArray $requestArray -directory $directory -tradieArray $tradieArray -clientArray $clientArray -services $services
+        }
+    }
+}
+
+Function createTables($directory)
+{   
+    $dirPath = $directory
+    $DbName = "CSIT314 Database.accdb"
+    $Db = Join-Path $dirPath $DbName
+    Write-Host "Directory Path: $Db"
+    if(Test-Path $dirPath -ea silentlyContinue)
+    {}
+    $testPath = Test-Path $Db
+    if($testPath -eq $false)
+    {
+        Create-DataBase -db $Db
+        $clientTable = "Clients"
+        $clientFields = "[ID] INT,[Client Name] TEXT(255), [Age] INT, [Location] TEXT(255), [Username] TEXT(255), [Password] TEXT(255)"
+        $clientCommand = "CREATE TABLE $clientTable ($clientFields)"
+        Write-Host "Processing SQL query: $clientCommand"
+        Invoke-ADOCommand -db $Db -command $clientCommand
+        Fill-Database-Clients -db $Db -clientArray $clientArray
+        Write-Host "Table '$clientTable' created successfully!"
+
+        $tradieTable = "Tradies"
+        $tradieFields = "[ID] INT,[Tradie Name] TEXT(255), [Age] INT, [Experience] INT, [Username] TEXT(255), [Password] TEXT(255)"
+        $tradieCommand = "CREATE TABLE $tradieTable ($tradieFields)"
+        Write-Host "Processing SQL query: $tradieCommand"
+        Invoke-ADOCommand -db $Db -command $tradieCommand
+        Fill-Database-Tradies -db $Db -tradieArray $tradieArray
+        Write-Host "Table '$tradieTable' created successfully!"
+
+        $table = "ServiceRequests"
+        $Fields = "[Request ID] INT, [Service Type] TEXT(255),[Client Name] TEXT(255), [Location] TEXT(255), [Tradie Assigned] TEXT(255), [Job Cost] TEXT(255), [Status] TEXT(255), [Create Date] TEXT(255), [Due Date] TEXT(255)"
+        $command = "CREATE TABLE $table ($fields)"
+        Write-Host "Processing SQL query: $command"
+        Invoke-ADOCommand -db $Db -command $command
+        Fill-Database-Requests -db $Db -requestArray $requestArray -directory $directory
+        Write-Host "Table '$table' created successfully!"
+
+        $newTable = "NewRequests"
+        $Fields = "[Request ID] INT, [Service Type] TEXT(255),[Client Name] TEXT(255), [Location] TEXT(255), [Tradie Assigned] TEXT(255), [Job Cost] TEXT(255), [Status] TEXT(255),[Create Date] TEXT(255), [Due Date] TEXT(255)"
+        $command = "CREATE TABLE $newTable ($fields)"
+        Write-Host "Processing SQL query: $command"
+        Invoke-ADOCommand -db $Db -command $command
+        Write-Host "Table '$newTable' created successfully!"
+    }
+    else
+    {
+        Write-Host "Tables already exist, pulling data from tables..."
+        $connection = New-Object -ComObject ADODB.Connection
+        if([Environment]::Is64BitProcess){
+            Write-Host "64Bit version of Powershell"
+            $connection.Open("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$Db")
+        }
+        else
+        {
+            Write-Host "32Bit of Powershell"
+            $connection.Open("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=$Db" )
+        }
+        $query = "SELECT * FROM ServiceRequests"
+        Write-Host "Processing SQL query: $query"
+        $dataReader = (New-Object -ComObject ADODB.Recordset)
+        $dataReader.Open($query, $connection)
+
+        $printedArray = @()
+        while (!$dataReader.EOF) {
+            $requestId = $dataReader.Fields.Item("Request ID").Value
+            $requestType = $dataReader.Fields.Item("Service Type").Value
+            $requestClient = $dataReader.Fields.Item("Client Name").Value
+            $requestTradie = $dataReader.Fields.Item("Tradie Assigned").Value
+            $requestCost = $dataReader.Fields.Item("Job Cost").Value
+            $outputString = "Request ID: $requestId`r`nRequest Type: $requestType`r`nRequest Client: $requestClient `r`nRequest Tradie: $requestTradie`r`nRequest Cost: $requestCost`r`n------------------------------------------------------------------------------`r`n"
+            $printedArray += $outputString
+            Write-Host "Successfully pulled record with ID of: $requestId"
+            $dataReader.MoveNext()
+        }
+        Write-Host "Successfully pulled data from table: ServiceRequests"
+        $dataReader.Close()
+        $connection.Close()
+        return $printedArray
+         
+    }
+}
+
+Function GetLocation($directory, $value)
+{
+    $dirPath = $directory
+    $DbName = "CSIT314 Database.accdb"
+    $Db = Join-Path $dirPath $DbName
+    Write-Host $Db
+    $connection = New-Object -ComObject ADODB.Connection
+    if([Environment]::Is64BitProcess){
+        Write-Host "64Bit version of Powershell"
+        $connection.Open("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$Db")
+    }
+    else
+    {
+        Write-Host "32Bit of Powershell"
+        $connection.Open("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=$Db" )
+    }
+    $query = "SELECT LOCATION FROM CLIENTS WHERE [Client Name] = '$value'"
+    Write-Host "Processing SQL query: $query"
+    $dataReader = (New-Object -ComObject ADODB.Recordset)
+    $dataReader.Open($query, $connection)
+    Write-Host "Query has been passed"
+    $printedArray = @()
+    while (!$dataReader.EOF) {
+        $requestLocation = $dataReader.Fields.Item("Location").Value
+        if(!$dataReader.BOF) {
+        $dataReader.MoveNext()
+        }
+    }
+    $dataReader.Close()
+    $connection.Close()
+    return $requestLocation
+}
+
+Function GetTradie($directory, $value)
+{
+    $dirPath = $directory
+    $DbName = "CSIT314 Database.accdb"
+    $Db = Join-Path $dirPath $DbName
+    Write-Host $Db
+    $connection = New-Object -ComObject ADODB.Connection
+    if([Environment]::Is64BitProcess){
+        Write-Host "64Bit version of Powershell"
+        $connection.Open("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$Db")
+    }
+    else
+    {
+        Write-Host "32Bit of Powershell"
+        $connection.Open("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=$Db" )
+    }
+    $query = "SELECT * FROM ServiceRequests WHERE [Tradie Assigned] = '$value'"
+    Write-Host "Processing SQL query: $query"
+    $dataReader = (New-Object -ComObject ADODB.Recordset)
+    $dataReader.Open($query, $connection)
+    Write-Host "Query has been passed"
+    $printedArray = @()
+    while (!$dataReader.EOF) {
+        $requestId = $dataReader.Fields.Item("Request ID").Value
+        $requestType = $dataReader.Fields.Item("Service Type").Value
+        $requestClient = $dataReader.Fields.Item("Client Name").Value
+        $requestLocation = $dataReader.Fields.Item("Location").Value
+        $requestTradie = $dataReader.Fields.Item("Tradie Assigned").Value
+        $requestCost = $dataReader.Fields.Item("Job Cost").Value
+        $requestStatus = $dataReader.Fields.Item("Status").Value
+        $requestCreate = $dataReader.Fields.Item("Create Date").Value
+        $requestDue = $dataReader.Fields.Item("Due Date").Value
+        $outputString = "Request ID: $requestId`r`nRequest Type: $requestType`r`nRequest Client: $requestClient `r`nRequest Location: $requestLocation `r`nRequest Tradie: $requestTradie`r`nRequest Cost: $requestCost`r`nRequest Status: $requestStatus`r`nCreate Date: $requestCreate`r`nDue Date: $requestDue`r`n--------------------------------------------------`r`n"
+        $printedArray += $outputString
+        Write-Host "Successfully pulled record with ID of: $requestId"
+        if(!$dataReader.BOF) {
+        $dataReader.MoveNext()
+        }
+    }
+    Write-Host "Successfully pulled data from table: ServiceRequests"
+    $dataReader.Close()
+    $connection.Close()
+    return $printedArray
+}
+
+Function GetClient($directory, $value)
+{
+    $dirPath = $directory
+    $DbName = "CSIT314 Database.accdb"
+    $Db = Join-Path $dirPath $DbName
+    Write-Host $Db
+    $connection = New-Object -ComObject ADODB.Connection
+    if([Environment]::Is64BitProcess){
+        Write-Host "64Bit version of Powershell"
+        $connection.Open("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$Db")
+    }
+    else
+    {
+        Write-Host "32Bit of Powershell"
+        $connection.Open("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=$Db" )
+    }
+    $query = "SELECT * FROM ServiceRequests WHERE [Client Name] = '$value'"
+    Write-Host "Processing SQL query: $query"
+    $dataReader = (New-Object -ComObject ADODB.Recordset)
+    $dataReader.Open($query, $connection)
+    Write-Host "Query has been passed"
+    $printedArray = @()
+    while (!$dataReader.EOF) {
+        $requestId = $dataReader.Fields.Item("Request ID").Value
+        $requestType = $dataReader.Fields.Item("Service Type").Value
+        $requestClient = $dataReader.Fields.Item("Client Name").Value
+        $requestLocation = $dataReader.Fields.Item("Location").Value
+        $requestTradie = $dataReader.Fields.Item("Tradie Assigned").Value
+        $requestCost = $dataReader.Fields.Item("Job Cost").Value
+        $outputString = "Request ID: $requestId`r`nRequest Type: $requestType`r`nRequest Client: $requestClient `r`nRequest Location: $requestLocation `r`nRequest Tradie: $requestTradie`r`nRequest Cost: $requestCost`r`n--------------------------------------------------`r`n"
+        $printedArray += $outputString
+        Write-Host "Successfully pulled record with ID of: $requestId"
+        if(!$dataReader.BOF) {
+        $dataReader.MoveNext()
+        }
+    }
+    Write-Host "Successfully pulled data from table: ServiceRequests"
+    $dataReader.Close()
+    $connection.Close()
+    return $printedArray
+}
+
+Function GetAllClients($directory)
+{
+    class Client{
+    [int]$id
+    [String]$name
+    [int]$age
+    [String]$address
+    [String]$username
+    [String]$password
+    }
+    $dirPath = $directory
+    $DbName = "CSIT314 Database.accdb"
+    $Db = Join-Path $dirPath $DbName
+    Write-Host $Db
+    $connection = New-Object -ComObject ADODB.Connection
+    if([Environment]::Is64BitProcess){
+        Write-Host "64Bit version of Powershell"
+        $connection.Open("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$Db")
+    }
+    else
+    {
+        Write-Host "32Bit of Powershell"
+        $connection.Open("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=$Db" )
+    }
+    $query = "SELECT * FROM Clients"
+    Write-Host "Processing SQL query: $query"
+    $dataReader = (New-Object -ComObject ADODB.Recordset)
+    $dataReader.Open($query, $connection)
+    Write-Host "Query has been passed"
+    $printedArray = @()
+    while (!$dataReader.EOF) {
+        $client = [Client]::new()
+        $client.id = $dataReader.Fields.Item("ID").Value
+        $client.name = $dataReader.Fields.Item("Client Name").Value
+        $client.age = $dataReader.Fields.Item("Age").Value
+        $client.address = $dataReader.Fields.Item("Location").Value
+        $client.username = $dataReader.Fields.Item("Username").Value
+        $client.password = $dataReader.Fields.Item("Password").Value
+        $printedArray += $client
+        if(!$dataReader.BOF) {
+        $dataReader.MoveNext()
+        }
+    }
+    Write-Host "Successfully pulled data from table: ServiceRequests"
+    $dataReader.Close()
+    $connection.Close()
+    return $printedArray
+}
+
+Function GetAllTradies($directory)
+{
+    class Tradie {
+        [int]$ID
+        [String]$Name
+        [int]$age
+        [int]$experience
+        [String]$location
+        [String]$userName
+        [String]$password
+    }
+
+    $dirPath = $directory
+    $DbName = "CSIT314 Database.accdb"
+    $Db = Join-Path $dirPath $DbName
+    Write-Host $Db
+    $connection = New-Object -ComObject ADODB.Connection
+    if([Environment]::Is64BitProcess){
+        Write-Host "64Bit version of Powershell"
+        $connection.Open("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$Db")
+    }
+    else
+    {
+        Write-Host "32Bit of Powershell"
+        $connection.Open("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=$Db" )
+    }
+    $query = "SELECT * FROM Tradies"
+    Write-Host "Processing SQL query: $query"
+    $dataReader = (New-Object -ComObject ADODB.Recordset)
+    $dataReader.Open($query, $connection)
+    Write-Host "Query has been passed"
+    $printedArray = @()
+    while (!$dataReader.EOF) {
+        $tradie = [Tradie]::new()
+        $tradie.ID = $dataReader.Fields.Item("ID").Value
+        $tradie.Name = $dataReader.Fields.Item("Tradie Name").Value
+        $tradie.age = $dataReader.Fields.Item("Age").Value
+        $tradie.experience = $dataReader.Fields.Item("Experience").Value
+        $tradie.userName = $dataReader.Fields.Item("Username").Value
+        $tradie.password = $dataReader.Fields.Item("Password").Value
+        $printedArray += $tradie
+        if(!$dataReader.BOF) {
+        $dataReader.MoveNext()
+        }
+    }
+    Write-Host "Successfully pulled data from table: ServiceRequests"
+    $dataReader.Close()
+    $connection.Close()
+    return $printedArray
+}
+
+Function GetAllRequests($directory)
+{
+    class Request {
+    [int]$requestID
+    [String]$client
+    [String]$location
+    [String]$type
+    [String]$tradie
+    [int]$jobCost
+    [String]$status
+    [DateTime]$createDate
+    [DateTime]$dueDate
+    }
+
+    $dirPath = $directory
+    $DbName = "CSIT314 Database.accdb"
+    $Db = Join-Path $dirPath $DbName
+    Write-Host $Db
+    $connection = New-Object -ComObject ADODB.Connection
+    if([Environment]::Is64BitProcess){
+        Write-Host "64Bit version of Powershell"
+        $connection.Open("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$Db")
+    }
+    else
+    {
+        Write-Host "32Bit of Powershell"
+        $connection.Open("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=$Db" )
+    }
+    $query = "SELECT * FROM ServiceRequests"
+    Write-Host "Processing SQL query: $query"
+    $dataReader = (New-Object -ComObject ADODB.Recordset)
+    $dataReader.Open($query, $connection)
+    Write-Host "Query has been passed"
+    $printedArray = @()
+    while (!$dataReader.EOF) {
+        $request = [Request]::new()
+        $request.requestID = $dataReader.Fields.Item("Request ID").Value
+        $request.type = $dataReader.Fields.Item("Service Type").Value
+        $request.client = $dataReader.Fields.Item("Client Name").Value
+        $request.location = $dataReader.Fields.Item("Location").Value
+        $request.tradie = $dataReader.Fields.Item("Tradie Assigned").Value
+        $request.jobCost = $dataReader.Fields.Item("Job Cost").Value
+        $request.status = $dataReader.Fields.Item("Status").Value
+        $request.createDate = $dataReader.Fields.Item("Create Date").Value
+        $request.dueDate = $dataReader.Fields.Item("Due Date").Value
+        $printedArray += $request
+        if(!$dataReader.BOF) {
+        $dataReader.MoveNext()
+        }
+    }
+    Write-Host "Successfully pulled data from table: ServiceRequests"
+    $dataReader.Close()
+    $connection.Close()
+    return $printedArray
+}
+
+Function GetAllNewRequests($directory)
+{
+    class Request {
+    [int]$requestID
+    [String]$client
+    [String]$location
+    [String]$type
+    [String]$tradie
+    [int]$jobCost
+    [String]$status
+    [DateTime]$createDate
+    [DateTime]$dueDate
+    }
+
+    $dirPath = $directory
+    $DbName = "CSIT314 Database.accdb"
+    $Db = Join-Path $dirPath $DbName
+    Write-Host $Db
+    $connection = New-Object -ComObject ADODB.Connection
+    if([Environment]::Is64BitProcess){
+        Write-Host "64Bit version of Powershell"
+        $connection.Open("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$Db")
+    }
+    else
+    {
+        Write-Host "32Bit of Powershell"
+        $connection.Open("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=$Db" )
+    }
+    $query = "SELECT * FROM NewRequests"
+    Write-Host "Processing SQL query: $query"
+    $dataReader = (New-Object -ComObject ADODB.Recordset)
+    $dataReader.Open($query, $connection)
+    Write-Host "Query has been passed"
+    $printedArray = @()
+    while (!$dataReader.EOF) {
+        $request = [Request]::new()
+        $request.requestID = $dataReader.Fields.Item("Request ID").Value
+        $request.type = $dataReader.Fields.Item("Service Type").Value
+        $request.client = $dataReader.Fields.Item("Client Name").Value
+        $request.location = $dataReader.Fields.Item("Location").Value
+        $request.tradie = $dataReader.Fields.Item("Tradie Assigned").Value
+        $request.jobCost = $dataReader.Fields.Item("Job Cost").Value
+        $request.status = $dataReader.Fields.Item("Status").Value
+        $request.createDate = $dataReader.Fields.Item("Create Date").Value
+        $request.dueDate = $dataReader.Fields.Item("Due Date").Value
+        $printedArray += $request
+        if(!$dataReader.BOF) {
+        $dataReader.MoveNext()
+        }
+    }
+    Write-Host "Successfully pulled data from table: ServiceRequests"
+    $dataReader.Close()
+    $connection.Close()
+    return $printedArray
+}
+
+Function Create-DataBase($Db)
+{
+    $application = New-Object -ComObject Access.Application
+    $application.NewCurrentDataBase($Db,10)
+    $application.CloseCurrentDataBase()
+    $application.Quit()
+}
+
+Function Invoke-ADOCommand($Db, $Command)
+{
+    $connection = New-Object -ComObject ADODB.Connection
+    if([Environment]::Is64BitProcess){
+        Write-Host "64Bit version of Powershell"
+        $connection.Open("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$Db")
+    }
+    else
+    {
+        Write-Host "32Bit of Powershell"
+        $connection.Open("Provider= Microsoft.Jet.OLEDB.4.0;Data Source=$Db" )
+    }
+    $connection.Execute($Command)
+    $connection.Close()
+}
+
+Function Fill-Database-Requests($Db, $requestArray, $directory)
+{
+    Write-Host "Filling Requests Table"
+    $connection = New-Object -ComObject ADODB.Connection
+    if([Environment]::Is64BitProcess){
+        Write-Host "64Bit version of Powershell"
+        $connection.Open("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$Db")
+    }
+    else
+    {
+        Write-Host "32Bit of Powershell"
+        $connection.Open("Provider= Microsoft.Jet.OLEDB.4.0;Data Source=$Db" )
+    }
+    foreach ($request in $requestArray) 
+    {
+        $location = GetLocation -directory $directory -value $request.client
+        $command = "INSERT INTO ServiceRequests ([Request ID], [Service Type], [Client Name], [Location], [Tradie Assigned], [Job Cost], [Status],[Create Date], [Due Date]) VALUES ('$($request.requestID)', '$($request.type)', '$($request.client)', '$($location)', '$($request.tradie)', '$($request.jobCost)','$($request.status)', '$($request.createDate)', '$($request.dueDate)')"
+        $connection.Execute($command)
+    }
+    $connection.close()
+}
+
+Function Fill-Database-Tradies($Db, $tradieArray)
+{
+    Write-Host "Filling Tradies Table"
+    $connection = New-Object -ComObject ADODB.Connection
+    if([Environment]::Is64BitProcess){
+        Write-Host "64Bit version of Powershell"
+        $connection.Open("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$Db")
+    }
+    else
+    {
+        Write-Host "32Bit of Powershell"
+        $connection.Open("Provider= Microsoft.Jet.OLEDB.4.0;Data Source=$Db" )
+    }
+    foreach ($tradie in $tradieArray) 
+    {
+        $command = "INSERT INTO Tradies ([ID], [Tradie Name], [Age], [Experience], [Username], [Password]) VALUES ('$($tradie.ID)', '$($tradie.Name)', '$($tradie.age)', '$($tradie.experience)', '$($tradie.userName)', '$($tradie.password)')"
+        $connection.Execute($command)
+    }
+    $connection.close()
+}
+
+Function Fill-Database-Clients($Db, $clientArray)
+{
+    Write-Host "Filling Client Table"
+    $connection = New-Object -ComObject ADODB.Connection
+    if([Environment]::Is64BitProcess){
+        Write-Host "64Bit version of Powershell"
+        $connection.Open("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$Db")
+    }
+    else
+    {
+        Write-Host "32Bit of Powershell"
+        $connection.Open("Provider= Microsoft.Jet.OLEDB.4.0;Data Source=$Db" )
+    }
+    foreach ($client in $clientArray) 
+    {
+        $command = "INSERT INTO Clients ([ID] ,[Client Name], [Age], [Location], [Username], [Password]) VALUES ('$($client.ID)', '$($client.Name)', '$($client.age)', '$($client.address)', '$($client.userName)', '$($client.password)')"
+        $connection.Execute($command)
+    }
+    $connection.close()
+}
+
+Function RequestGui([array]$tradieArray, $selectType, $jobCost, $location, $clientArray, $clientName, $directory)
+{
+   $tradieDropdown = New-Object System.Windows.Forms.ComboBox
+   $selectTradie = $tradieArray | Select Name
+   $tradieDropdown.Items.AddRange($selectTradie.Name)
+   $tradieDropdown.Size = New-Object System.Drawing.Size(200,40)
+   $tradieDropdown.Font = New-Object System.Drawing.Font ("Arial", 16)
+   $tradieDropdown.BackColor = [System.Drawing.Color]::White
+   $tradieDropdown.Location = New-Object System.Drawing.Size(260,150)
+
+   $typeDropdown = New-Object System.Windows.Forms.ComboBox
+   $typeDropdown.Items.AddRange($selectType)
+   $typeDropdown.Size = New-Object System.Drawing.Size(200,40)
+   $typeDropdown.Font = New-Object System.Drawing.Font ("Arial", 16)
+   $typeDropdown.BackColor = [System.Drawing.Color]::White
+   $typeDropdown.Location = New-Object System.Drawing.Size(260,200)
+
+   $TradieLabel = New-Object System.Windows.Forms.Label
+   $TradieLabel.Location = New-Object System.Drawing.Size(150,150)
+   $TradieLabel.Font = New-Object System.Drawing.Font("Arial",10)
+   $TradieLabel.Text = 'Tradie: '
+
+   $ServiceLabel = New-Object System.Windows.Forms.Label
+   $ServiceLabel.Location = New-Object System.Drawing.Size(150,200)
+   $ServiceLabel.Font = New-Object System.Drawing.Font("Arial",10)
+   $ServiceLabel.Text = 'Service: '
+
+   $LocationLabel = New-Object System.Windows.Forms.Label
+   $LocationLabel.Location = New-Object System.Drawing.Size(150,250)
+   $LocationLabel.Font = New-Object System.Drawing.Font("Arial",10)
+   $LocationLabel.Text = 'Location: '
+   foreach($client in $clientArray)
+   {
+       if($client.name -eq $clientName)
+       {
+           [String]$address = $client.address
+       }
+   }
+   $Location = New-Object System.Windows.Forms.RichTextBox
+   $Location.Location = New-Object System.Drawing.Size(260,250)
+   $Location.Size = New-Object System.Drawing.Size(200,35)
+   $Location.Font = New-Object System.Drawing.Font ("Arial", 16)
+   $Location.BackColor = [System.Drawing.Color]::White
+   $Location.Text = $address
+   $Location.ReadOnly = $true
+
+   $CostLabel = New-Object System.Windows.Forms.Label
+   $CostLabel.Location = New-Object System.Drawing.Size(150,300)
+   $CostLabel.Font = New-Object System.Drawing.Font("Arial",10)
+   $CostLabel.Text = 'Cost: '
+   
+   $Cost = New-Object System.Windows.Forms.ComboBox
+   $Cost.Location = New-Object System.Drawing.Size(260,300)
+   $Cost.Size = New-Object System.Drawing.Size(200,35)
+   $Cost.Font = New-Object System.Drawing.Font ("Arial", 10)
+   $Cost.BackColor = [System.Drawing.Color]::White
+   $Cost.Text = "Please select Service type"
+
+   $paintingPrices = @(2000, 2250, 2500, 2750, 3000)
+   $fencePrices = @(1750, 2250, 2750, 3250, 3750)
+   $roofPrices = @(3500, 4000, 4500, 5000, 5500)
+   $carpetPrices = @(3000, 3250, 3500, 3750, 4000)
+   $flooringPrices = @(3250, 3500, 3750, 4000, 4250)
+   $tilePrices = @(500, 600, 700, 800, 900)
+   $typeDropdown.Add_SelectedIndexChanged({
+   $Cost.Font = New-Object System.Drawing.Font ("Arial", 16)
+   if($typeDropdown.SelectedItem -eq "Painting") {
+       $Cost.Items.Clear()
+       $Cost.Text = ""
+       $Cost.Items.AddRange($paintingPrices)
+   }
+   elseif($typeDropdown.SelectedItem -eq "Fence Installation") {
+       $Cost.Items.Clear()
+       $Cost.Text = ""
+       $Cost.Items.AddRange($fencePrices)
+   }
+   elseif($typeDropdown.SelectedItem -eq "Roof Cleaning") {
+       $Cost.Items.Clear()
+       $Cost.Text = ""
+       $Cost.Items.AddRange($roofPrices)
+   }
+   elseif($typeDropdown.SelectedItem -eq "Carpet Installation") {
+       $Cost.Items.Clear()
+       $Cost.Text = ""
+       $Cost.Items.AddRange($carpetPrices)
+   }
+   elseif($typeDropdown.SelectedItem -eq "Flooring repairs") {
+       $Cost.Items.Clear()
+       $Cost.Text = ""
+       $Cost.Items.AddRange($flooringPrices)
+   }
+   elseif($typeDropdown.SelectedItem -eq "Tile repairs") {
+       $Cost.Items.Clear()
+       $Cost.Text = ""
+       $Cost.Items.AddRange($tilePrices)
+   }
+   })
+
+   $NameLabel = New-Object System.Windows.Forms.Label
+   $NameLabel.Location = New-Object System.Drawing.Size(150,100)
+   $NameLabel.Font = New-Object System.Drawing.Font("Arial",10)
+   $NameLabel.Text = 'Client: '
+
+   $Name = New-Object System.Windows.Forms.RichTextBox
+   $Name.Location = New-Object System.Drawing.Size(260,100)
+   $Name.Size = New-Object System.Drawing.Size(200,35)
+   $Name.Font = New-Object System.Drawing.Font ("Arial", 16)
+   $Name.BackColor = [System.Drawing.Color]::White
+   $Name.Text = $clientName
+   $Name.ReadOnly = $true
+
+   $Button = New-Object System.Windows.Forms.Button
+   $Button.Location = New-Object System.Drawing.Size(340,350)
+   $Button.Size = New-Object System.Drawing.Size(120,40)
+   $Button.Font = New-Object System.Drawing.Font ("Arial", 10)
+   $Button.Text = "Create Service"
+   $Button.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+   $Button.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+   $Button.FlatStyle = "Flat"
+   $Button.FlatAppearance.BorderSize = 2
+   $Button.FlatAppearance.BorderColor = "#000000"
+   $Button.Add_Click({
+   $type = "newRequest"
+       $main_form.Close()
+       createRequests -directory $directory -selectedType $typeDropdown.SelectedItem -selectedClient $clientName -selectedTradie $tradieDropdown.SelectedItem -newLocation $Location.Text -newCost $Cost.Text -type $type
+   })
+
+   $main_form = New-Object System.Windows.Forms.Form
+   $main_form.Text = 'Create New Service Request'
+   $main_form.AutoSize = $true
+   $main_form.BackColor = [System.Drawing.Color]::FromArgb(255, 255, 255)
+   $main_form.Size = New-Object System.Drawing.Size(700,500)
+   $main_form.controls.Add($TradieLabel)
+   $main_form.controls.Add($ServiceLabel)
+   $main_form.controls.Add($LocationLabel)
+   $main_form.controls.Add($Location)
+   $main_form.controls.Add($Cost)
+   $main_form.controls.Add($CostLabel)
+   $main_form.controls.Add($Name)
+   $main_form.controls.Add($Button)
+   $main_form.controls.Add($NameLabel)
+   $main_form.Controls.Add($tradieDropdown)
+   $main_form.Controls.Add($typeDropdown)
+   $main_form.ShowDialog()
+
+}
+
+Function clientGui($requestArray, $directory, $clientName, $loginGui, $tradieArray, $services, $clientArray)
+{
+   Add-Type -assembly System.Windows.Forms
+
+   $main_form = New-Object System.Windows.Forms.Form
+
+   $main_form.Text = "Logged in as: $clientName"
+
+   $main_form.AutoSize = $true
+
+   $main_form.BackColor = [System.Drawing.Color]::White
+
+   $textBox = New-Object System.Windows.Forms.RichTextBox
+
+   $textBox.Font = New-Object System.Drawing.Font("Arial",16)
+
+   $textBox.Multiline = $True;
+
+   $textBox.Location = New-Object System.Drawing.Size(10,100)
+
+   $textBox.Size = New-Object System.Drawing.Size(1000,700)
+
+   $textBox.AutoSize = $true
+
+   $textBox.Scrollbars = "Vertical" 
+
+   $textBox.BorderStyle = 'FixedSingle'
+
+   $textBox.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $main_form.Controls.Add($textBox)
+
+   $Button = New-Object System.Windows.Forms.Button
+
+   $Button.Location = New-Object System.Drawing.Size(400,10)
+
+   $Button.Size = New-Object System.Drawing.Size(200,40)
+
+   $Button.Font = New-Object System.Drawing.Font ("Arial", 10)
+
+   $Button.Text = "Generate Services"
+
+   $Button.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $Button.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $Button.FlatStyle = "Flat"
+
+   $Button.FlatAppearance.BorderSize = 2
+
+   $Button.FlatAppearance.BorderColor = "#000000"
+
+   $Button.Add_Click({$textBox.Text = GetClient -directory $directory -value $clientName})
+
+   $createRequests = New-Object System.Windows.Forms.Button
+
+   $createRequests.Text = "New Request"
+
+   $createRequests.Location = New-Object System.Drawing.Size(230,10)
+           
+   $createRequests.Size = New-Object System.Drawing.Size(160,40)
+
+   $createRequests.Font = New-Object System.Drawing.Font("Arial", 10)
+
+   $createRequests.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $createRequests.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $createRequests.FlatStyle = "Flat"
+
+   $createRequests.FlatAppearance.BorderSize = 2
+
+   $createRequests.FlatAppearance.BorderColor = "#000000"
+
+   $createRequests.Add_Click({
+       Write-Host $tradieArray
+       RequestGui -tradieArray $tradieArray -selectType $services -clientArray $clientArray -clientName $clientName -directory $directory
+   })
+
+   $filterbox = New-Object System.Windows.Forms.RichTextBox
+
+   $filterbox.Font = New-Object System.Drawing.Font("Arial",16)
+
+   $filterbox.Location = New-Object System.Drawing.Size(810,50)
+
+   $filterbox.Size = New-Object System.Drawing.Size(200, 40)
+
+   $filterBox.Text = "Enter request ID..."
+
+   $filterBox.Add_Click{
+   if ($filterBox.Text -eq "Enter request ID...") 
+   {
+       $filterBox.Clear()
+   }}
+
+   $filterBox.Add_Leave{
+   if ($filterBox.Text -eq "") 
+   {
+       $filterBox.Text = "Enter Request ID..."
+   }}
+
+   $filterButton = New-Object System.Windows.Forms.Button
+
+   $filterButton.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $filterButton.Location = New-Object System.Drawing.Size(810, 5)
+
+   $filterButton.Size = New-Object System.Drawing.Size (200, 40)
+
+   $filterButton.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $filterButton.Text = "Filter"
+
+   $filterButton.FlatStyle = "Flat"
+
+   $filterButton.FlatAppearance.BorderSize = 2
+
+   $filterButton.FlatAppearance.BorderColor = "#000000"
+
+   $filterButton.Add_Click({$textbox.Text = filterSearch -requests $requestArray -value $filterbox.Text})
+
+   $logout = New-Object System.Windows.Forms.Button
+
+   $logout.Text = 'Logout'
+
+   $logout.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $logout.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $logout.FlatStyle = "Flat"
+
+   $logout.FlatAppearance.BorderSize = 2
+
+   $logout.FlatAppearance.BorderColor = "#000000"
+
+   $logout.Location = New-Object System.Drawing.Size(10,10)
+
+   $logout.Size = New-Object System.Drawing.Size(100,40)
+
+   $logout.Font = New-Object System.Drawing.Font("Arial", 10)
+
+   $logout.Add_Click({
+   $loginGui.Show()
+   $main_form.Close()})
+
+   $account = New-Object System.Windows.Forms.Button
+
+   $account.Text = 'Account'
+
+   $account.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $account.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $account.FlatStyle = "Flat"
+
+   $account.FlatAppearance.BorderSize = 2
+
+   $account.FlatAppearance.BorderColor = "#000000"
+
+   $account.Location = New-Object System.Drawing.Size(120,10)
+
+   $account.Size = New-Object System.Drawing.Size(100,40)
+
+   $account.Font = New-Object System.Drawing.Font("Arial", 10)
+
+   $account.Add_Click({
+   #$tradieArray = @()
+   #$tradieArray = GetTradieData -directory $directory -tradieName $tradieName
+   accountGuiClient -form $main_form -client $clientName -directory $directory
+   })
+
+   $main_form.Controls.Add($account)
+
+   $main_form.Controls.Add($logout)
+
+   $main_form.Controls.Add($filterBox)
+
+   $main_form.Controls.Add($filterButton)
+
+   $main_form.Controls.Add($Button)
+
+   $main_form.Controls.Add($createRequests)
+
+   $main_form.ShowDialog()
+}
+
+Function loginGui($requestArray, $directory, $tradieArray, $clientArray, $services)
+{
+   $main_form = New-Object System.Windows.Forms.Form
+
+   $main_form.Text = 'Login'
+
+   $main_form.AutoSize = $true
+
+   $main_form.BackColor = [System.Drawing.Color]::White
+
+   $main_form.Size = New-Object System.Drawing.Size(700,400)
+
+   $usernameLabel = New-Object System.Windows.Forms.Label
+
+   $usernameLabel.Location = New-Object System.Drawing.Size(260,205)
+
+   $usernameLAbel.AutoSize = $true
+
+   $usernameLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $usernameLabel.Text = 'Username: '
+
+   $main_form.controls.Add($usernameLabel)
+
+   $username = New-Object System.Windows.Forms.TextBox
+
+   $username.Font = New-Object System.Drawing.Font("Arial",16)
+
+   $username.Location = New-Object System.Drawing.Size(400, 200)
+
+   $username.Size = New-Object System.Drawing.Size(160, 40)
+
+   $passwordLabel = New-Object System.Windows.Forms.Label
+
+   $passwordLabel.Location = New-Object System.Drawing.Size(260,275)
+
+   $passwordLabel.AutoSize = $true
+
+   $passwordLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $passwordLabel.Text = 'Password: '
+
+   $main_form.controls.Add($passwordLabel)
+
+   $password = New-Object System.Windows.Forms.TextBox
+
+   $password.Font = New-Object System.Drawing.Font("Arial",16)
+
+   $password.Location = New-Object System.Drawing.Size(400, 270)
+
+   $password.Size = New-Object System.Drawing.Size(160, 40)
+
+   $password.PasswordChar = "*"
+
+   $password.Add_KeyDown({
+   if($_.KeyCode -eq "Enter"){
+       $tradieRequests = @()
+   $clientRequests = @()
+   $loginType = ""
+       if($username.Text -eq "Admin" -and $password.Text -eq "Admin")
+       {
+           $loginType = "Admin"
+           $main_form.Hide()
+           createGui -requestArray $requestArray -directory $directory -tradieArray $tradieArray -loginGui $main_form -clientArray $clientArray
+       }
+       elseif($username.Text -ne "Admin" -and $password.text -ne "Admin" )
+       {
+           foreach($tradie in $tradieArray)
+           {
+               if($username.text -eq $tradie.userName -and $password.Text -eq $tradie.password)
+               {
+                   $loginType = "Tradie"
+                   $main_form.Hide()
+                   tradieGUI -requestArray $tradieRequests -directory $directory -tradieName $tradie.Name -loginGui $main_form -allRequests $requestArray
+               }else{}
+           }
+           if($loginType -ne "Tradie" -and $loginType -ne "Admin")
+           {
+               foreach($client in $clientArray)
+               {
+                   if($username.text -eq $client.userName -and $password.Text -eq $client.password)
+                   {
+                       $main_form.Hide()
+                       Write-Host "line 1415"
+                       clientGui -requestArray $clientRequests -directory $directory -clientName $client.Name -loginGui $main_form -tradieArray $tradieArray -services $services -clientArray $clientArray
+                   }
+               }
+               }
+           }
+       
+       else
+       {
+           $errorField.Text = "Incorrect credentials, please enter a valid login."
+       }   
+   }
+})
+
+   $main_form.controls.Add($username)
+
+   $main_form.controls.Add($password)
+
+   $loginButton = New-Object System.Windows.Forms.Button
+
+   $loginButton.Text = 'Login'
+
+   $loginButton.location = New-Object System.Drawing.Size(600,340)
+
+   $loginButton.Size = New-Object System.Drawing.Size(60,40)
+
+   $loginButton.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $loginButton.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $loginButton.FlatStyle = "Flat"
+
+   $loginButton.FlatAppearance.BorderSize = 2
+
+   $loginButton.FlatAppearance.BorderColor = "#000000"
+
+   $errorField = New-Object System.Windows.Forms.RichTextBox
+
+   $errorField.location = New-Object System.Drawing.Size(10, 450)
+
+   $errorField.Size = New-Object System.Drawing.Size(780,100)
+
+   $errorField.Font = New-Object System.Drawing.Font("Arial",14)
+
+   $errorField.ForeColor = [System.Drawing.Color]::FromArgb(255,0,0)
+
+   $main_form.controls.add($errorField)
+
+   $loginButton.Add_Click({
+   $tradieRequests = @()
+   $clientRequests = @()
+   $loginType = ""
+       if($username.Text -eq "Admin" -and $password.Text -eq "Admin")
+       {
+           $loginType = "Admin"
+           $main_form.Hide()
+           createGui -requestArray $requestArray -directory $directory -tradieArray $tradieArray -loginGui $main_form -clientArray $clientArray
+       }
+       elseif($username.Text -ne "Admin" -and $password.text -ne "Admin" )
+       {
+           foreach($tradie in $tradieArray)
+           {
+               if($username.text -eq $tradie.userName -and $password.Text -eq $tradie.password)
+               {
+                   $loginType = "Tradie"
+                   $main_form.Hide()
+                   tradieGUI -requestArray $tradieRequests -directory $directory -tradieName $tradie.Name -loginGui $main_form -allRequests $requestArray
+               }else{$errorField.Text = 'Incorrect credentials, please enter a valid login.'}
+           }
+           if($loginType -ne "Tradie" -and $loginType -ne "Admin")
+           {
+               foreach($client in $clientArray)
+               {
+                   if($username.text -eq $client.userName -and $password.Text -eq $client.password)
+                   {
+                       $main_form.Hide()
+                       Write-Host "line 1491 $($tradieArray)"
+                       clientGui -requestArray $clientRequests -directory $directory -clientName $client.Name -loginGui $main_form -tradieArray $tradieArray
+                   }
+               }
+               }
+               else{$errorField.Text = 'Incorrect credentials, please enter a valid login.'}
+           }
+       else
+       {
+           $errorField.Text = 'Incorrect credentials, please enter a valid login.'
+       }   
+   })
+
+   $newClient = New-Object System.Windows.Forms.Button
+
+   $newClient.Text = 'Sign up as Client'
+
+   $newClient.location = New-Object System.Drawing.Size(400,340)
+
+   $newClient.Size = New-Object System.Drawing.Size(160,40)
+
+   $newClient.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $newClient.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $newClient.FlatStyle = "Flat"
+
+   $newClient.FlatAppearance.BorderSize = 2
+
+   $newClient.FlatAppearance.BorderColor = "#000000"
+
+   $newClient.Add_Click({
+       $main_form.Hide()
+       createMembersGUI -directory $directory -form $main_form
+   })
+
+   $newTradie = New-Object System.Windows.Forms.Button
+
+   $newTradie.Text = 'Sign up as Tradie'
+
+   $newTradie.location = New-Object System.Drawing.Size(200,340)
+
+   $newTradie.Size = New-Object System.Drawing.Size(160,40)
+
+   $newTradie.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $newTradie.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $newTradie.FlatStyle = "Flat"
+
+   $newTradie.FlatAppearance.BorderSize = 2
+
+   $newTradie.FlatAppearance.BorderColor = "#000000"
+
+   $newTradie.Add_Click({
+       $main_form.Hide()
+       createTradiesGUI -directory $directory -form $main_form
+   })
+   $main_form.controls.Add($newTradie)
+
+   $main_form.controls.Add($newClient)
+   
+   $main_form.controls.Add($loginButton)
+
+   $main_form.ShowDialog()
+}
+
+Function CreateTradiesGUI($directory, $form)
+{
+   $main_form = New-Object System.Windows.Forms.Form
+
+   $main_form.Text = 'Login'
+
+   $main_form.AutoSize = $true
+
+   $main_form.BackColor = [System.Drawing.Color]::White
+
+   $main_form.Size = New-Object System.Drawing.Size(700,400)
+
+   $logoutButton = New-Object System.Windows.Forms.Button
+
+   $logoutButton = New-Object System.Windows.Forms.Button
+
+   $logoutButton.Location = New-Object System.Drawing.Size(120,10)
+
+   $logoutButton.Size = New-Object System.Drawing.Size(100,40)
+
+   $logoutButton.Font = New-Object System.Drawing.Font ("Arial", 10)
+
+   $logoutButton.Text = "Exit"
+
+   $logoutButton.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $logoutButton.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $logoutButton.FlatStyle = "Flat"
+
+   $logoutButton.FlatAppearance.BorderSize = 2
+
+   $logoutButton.FlatAppearance.BorderColor = "#000000"
+
+   $logoutButton.Add_Click({
+   $form.Show()
+   $main_form.Close()
+   })
+
+   $main_form = New-Object System.Windows.Forms.Form
+
+   $main_form.Text ='Creating new Client'
+
+   $main_form.AutoSize = $true
+
+   $main_form.BackColor = [System.Drawing.Color]::White
+
+   $main_form.Size = New-Object System.Drawing.Size(1000,850)
+
+   $nameLabel = New-Object System.Windows.Forms.Label
+
+   $nameLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $nameLabel.Text = 'Display Name: '
+
+   $nameLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $nameLabel.location = New-Object System.Drawing.Size(170, 200)
+
+   $name = New-Object System.Windows.Forms.TextBox
+
+   $name.Size = New-Object System.Drawing.Size(200, 50)
+
+   $name.location = New-Object System.Drawing.Size(500, 200)
+
+   $usernameLabel = New-Object System.Windows.Forms.Label
+
+   $usernameLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $usernameLabel.Text = 'Username: '
+
+   $usernameLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $usernameLabel.location = New-Object System.Drawing.Size(170, 260)
+
+   $username = New-Object System.Windows.Forms.TextBox
+
+   $username.PasswordChar = "*"
+
+   $username.Size = New-Object System.Drawing.Size(200, 50)
+
+   $username.location = New-Object System.Drawing.Size(500, 260)
+
+   $passwordLabel = New-Object System.Windows.Forms.Label
+
+   $passwordLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $passwordLabel.Text = 'Password: '
+
+   $passwordLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $passwordLabel.location = New-Object System.Drawing.Size(170, 320)
+
+   $password = New-Object System.Windows.Forms.TextBox
+
+   $password.PasswordChar = "*"
+
+   $password.Size = New-Object System.Drawing.Size(200, 50)
+
+   $password.location = New-Object System.Drawing.Size(500, 320)
+
+   $emailLabel = New-Object System.Windows.Forms.Label
+
+   $emailLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $emailLabel.Text = 'Email Address: '
+
+   $emailLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $emailLabel.location = New-Object System.Drawing.Size(170, 380)
+
+   $email = New-Object System.Windows.Forms.TextBox
+
+   $email.Size = New-Object System.Drawing.Size(200, 50)
+
+   $email.location = New-Object System.Drawing.Size(500, 380)
+
+   $phoneLabel = New-Object System.Windows.Forms.Label
+
+   $phoneLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $phoneLabel.Text = 'Phone Number: '
+
+   $phoneLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $phoneLabel.location = New-Object System.Drawing.Size(170, 440)
+    
+   $phone = New-Object System.Windows.Forms.TextBox
+
+   $phone.Size = New-Object System.Drawing.Size(200, 50)
+
+   $phone.location = New-Object System.Drawing.Size(500, 440)
+
+   $experienceLabel = New-Object System.Windows.Forms.Label
+
+   $experienceLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $experienceLabel.Text = 'Experience (1-100): '
+
+   $experienceLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $experienceLabel.location = New-Object System.Drawing.Size(170, 500)
+
+   $experience = New-Object System.Windows.Forms.TextBox
+
+   $experience.Size = New-Object System.Drawing.Size(200, 50)
+
+   $experience.location = New-Object System.Drawing.Size(500, 500)
+
+   $confirmButton = New-Object System.Windows.Forms.Button
+
+   $confirmButton.Text = 'Confirm Details'
+
+   $confirmButton.location = New-Object System.Drawing.Size(600,600)
+
+   $confirmButton.Size = New-Object System.Drawing.Size(160,40)
+
+   $confirmButton.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $confirmButton.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $confirmButton.FlatStyle = "Flat"
+
+   $confirmButton.FlatAppearance.BorderSize = 2
+
+   $confirmButton.FlatAppearance.BorderColor = "#000000"
+
+   $confirmButton.Add_Click({
+       $type = "Tradie"
+       $main_form.Close()
+       $form.Close()
+       createTradies -directory $directory -newUsername $username.Text -newPassword $password.Text -newExperience $experience.Text -newName $name.Text -newAge 78
+       executeActivity -count 1 -form $main_form -type $type
+       
+   })
+
+   $main_form.Controls.Add($confirmButton)
+
+   $main_form.Controls.Add($editable)
+
+   $main_form.Controls.Add($idLabel)
+
+   $main_form.Controls.Add($nameLabel)
+
+   $main_form.Controls.Add($usernameLabel)
+
+   $main_form.Controls.Add($passwordLabel)
+
+   $main_form.Controls.Add($emailLabel)
+
+   $main_form.Controls.Add($phoneLabel)
+
+   $main_form.Controls.Add($experienceLabel)
+
+   $main_form.Controls.Add($id)
+
+   $main_form.Controls.Add($name)
+
+   $main_form.Controls.Add($username)
+
+   $main_form.Controls.Add($password)
+
+   $main_form.Controls.Add($email)
+
+   $main_form.Controls.Add($phone)
+
+   $main_form.Controls.Add($experience)
+
+   $main_form.Controls.Add($logoutButton)
+
+   $main_form.ShowDialog()
+}
+
+Function CreateMembersGUI($directory, $form)
+{
+   $main_form = New-Object System.Windows.Forms.Form
+
+   $main_form.Text = 'Login'
+
+   $main_form.AutoSize = $true
+
+   $main_form.BackColor = [System.Drawing.Color]::White
+
+   $main_form.Size = New-Object System.Drawing.Size(700,400)
+
+   $logoutButton = New-Object System.Windows.Forms.Button
+
+   $logoutButton = New-Object System.Windows.Forms.Button
+
+   $logoutButton.Location = New-Object System.Drawing.Size(120,10)
+
+   $logoutButton.Size = New-Object System.Drawing.Size(100,40)
+
+   $logoutButton.Font = New-Object System.Drawing.Font ("Arial", 10)
+
+   $logoutButton.Text = "Exit"
+
+   $logoutButton.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $logoutButton.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $logoutButton.FlatStyle = "Flat"
+
+   $logoutButton.FlatAppearance.BorderSize = 2
+
+   $logoutButton.FlatAppearance.BorderColor = "#000000"
+
+   $logoutButton.Add_Click({
+   $form.Show()
+   $main_form.Close()
+   })
+
+   $main_form = New-Object System.Windows.Forms.Form
+
+   $main_form.Text ='Creating new Client'
+
+   $main_form.AutoSize = $true
+
+   $main_form.BackColor = [System.Drawing.Color]::White
+
+   $main_form.Size = New-Object System.Drawing.Size(1000,850)
+
+   $nameLabel = New-Object System.Windows.Forms.Label
+
+   $nameLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $nameLabel.Text = 'Display Name: '
+
+   $nameLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $nameLabel.location = New-Object System.Drawing.Size(170, 200)
+
+   $name = New-Object System.Windows.Forms.TextBox
+
+   $name.Size = New-Object System.Drawing.Size(200, 50)
+
+   $name.location = New-Object System.Drawing.Size(500, 200)
+
+   $usernameLabel = New-Object System.Windows.Forms.Label
+
+   $usernameLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $usernameLabel.Text = 'Username: '
+
+   $usernameLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $usernameLabel.location = New-Object System.Drawing.Size(170, 260)
+
+   $username = New-Object System.Windows.Forms.TextBox
+
+   $username.PasswordChar = "*"
+
+   $username.Size = New-Object System.Drawing.Size(200, 50)
+
+   $username.location = New-Object System.Drawing.Size(500, 260)
+
+   $passwordLabel = New-Object System.Windows.Forms.Label
+
+   $passwordLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $passwordLabel.Text = 'Password: '
+
+   $passwordLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $passwordLabel.location = New-Object System.Drawing.Size(170, 320)
+
+   $password = New-Object System.Windows.Forms.TextBox
+
+   $password.PasswordChar = "*"
+
+   $password.Size = New-Object System.Drawing.Size(200, 50)
+
+   $password.location = New-Object System.Drawing.Size(500, 320)
+
+   $emailLabel = New-Object System.Windows.Forms.Label
+
+   $emailLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $emailLabel.Text = 'Email Address: '
+
+   $emailLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $emailLabel.location = New-Object System.Drawing.Size(170, 380)
+
+   $email = New-Object System.Windows.Forms.TextBox
+
+   $email.Size = New-Object System.Drawing.Size(200, 50)
+
+   $email.location = New-Object System.Drawing.Size(500, 380)
+
+   $phoneLabel = New-Object System.Windows.Forms.Label
+
+   $phoneLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $phoneLabel.Text = 'Phone Number: '
+
+   $phoneLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $phoneLabel.location = New-Object System.Drawing.Size(170, 440)
+    
+   $phone = New-Object System.Windows.Forms.TextBox
+
+   $phone.Size = New-Object System.Drawing.Size(200, 50)
+
+   $phone.location = New-Object System.Drawing.Size(500, 440)
+
+   $addressLabel = New-Object System.Windows.Forms.Label
+
+   $addressLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $addressLabel.Text = 'Address: '
+
+   $addressLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $addressLabel.location = New-Object System.Drawing.Size(170, 500)
+
+   $address = New-Object System.Windows.Forms.TextBox
+
+   $address.Size = New-Object System.Drawing.Size(200, 50)
+
+   $address.location = New-Object System.Drawing.Size(500, 500)
+
+   $confirmButton = New-Object System.Windows.Forms.Button
+
+   $confirmButton.Text = 'Confirm Details'
+
+   $confirmButton.location = New-Object System.Drawing.Size(600,600)
+
+   $confirmButton.Size = New-Object System.Drawing.Size(160,40)
+
+   $confirmButton.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $confirmButton.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $confirmButton.FlatStyle = "Flat"
+
+   $confirmButton.FlatAppearance.BorderSize = 2
+
+   $confirmButton.FlatAppearance.BorderColor = "#000000"
+
+   $confirmButton.Add_Click({
+       $type = "Client"
+       $main_form.Close()
+       $form.Close()
+       createClients -directory $directory -newUsername $username.Text -newPassword $password.Text -newAddress $address.Text -newName $name.Text -newAge 78
+       executeActivity -count 1 -form $main_form -type $type
+       
+   })
+
+   $main_form.Controls.Add($confirmButton)
+
+   $main_form.Controls.Add($editable)
+
+   $main_form.Controls.Add($idLabel)
+
+   $main_form.Controls.Add($nameLabel)
+
+   $main_form.Controls.Add($usernameLabel)
+
+   $main_form.Controls.Add($passwordLabel)
+
+   $main_form.Controls.Add($emailLabel)
+
+   $main_form.Controls.Add($phoneLabel)
+
+   $main_form.Controls.Add($addressLabel)
+
+   $main_form.Controls.Add($id)
+
+   $main_form.Controls.Add($name)
+
+   $main_form.Controls.Add($username)
+
+   $main_form.Controls.Add($password)
+
+   $main_form.Controls.Add($email)
+
+   $main_form.Controls.Add($phone)
+
+   $main_form.Controls.Add($address)
+
+   $main_form.Controls.Add($logoutButton)
+
+   $main_form.ShowDialog()
+}
+
+Function tradieGui($requestArray, $directory, $tradieName, $loginGui, $allRequests)
+{
+   Add-Type -assembly System.Windows.Forms
+
+   $main_form = New-Object System.Windows.Forms.Form
+
+   $main_form.Text = "Logged in as: $tradieName"
+
+   $main_form.AutoSize = $true
+
+   $main_form.BackColor = [System.Drawing.Color]::White
+
+   $textBox = New-Object System.Windows.Forms.RichTextBox
+
+   $textBox.Font = New-Object System.Drawing.Font("Arial",16)
+
+   $textBox.Multiline = $True;
+
+   $textBox.Location = New-Object System.Drawing.Size(10,100)
+
+   $textBox.Size = New-Object System.Drawing.Size(1000,700)
+
+   $textBox.AutoSize = $true
+
+   $textBox.Scrollbars = "Vertical" 
+
+   $textBox.BorderStyle = 'FixedSingle'
+
+   $textBox.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $requestBox = New-Object System.Windows.Forms.RichTextBox
+
+   $requestBox.Font = New-Object System.Drawing.Font("Arial",16)
+
+   $requestBox.Multiline = $True;
+
+   $requestBox.Location = New-Object System.Drawing.Size(1020,50)
+
+   $requestBox.Size = New-Object System.Drawing.Size(300,705)
+
+   $requestBox.AutoSize = $true
+
+   $requestBox.Scrollbars = "Vertical" 
+
+   $requestBox.BorderStyle = 'FixedSingle'
+
+   $requestBox.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   class Request {
+    [int]$requestID
+    [String]$client
+    [String]$location
+    [String]$type
+    [String]$tradie
+    [int]$jobCost
+    [String]$status
+    [DateTime]$createDate
+    [DateTime]$dueDate
+    }
+
+   $dirPath = $directory
+    $DbName = "CSIT314 Database.accdb"
+    $Db = Join-Path $dirPath $DbName
+    Write-Host $Db
+    $newRequests = @()
+    $connection = New-Object -ComObject ADODB.Connection
+    if([Environment]::Is64BitProcess){
+        Write-Host "64Bit version of Powershell"
+        $connection.Open("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$Db")
+    }
+    else
+    {
+        Write-Host "32Bit of Powershell"
+        $connection.Open("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=$Db" )
+    }
+    $query = "SELECT * FROM NewRequests"
+    Write-Host "Processing SQL query: $query"
+    $dataReader = (New-Object -ComObject ADODB.Recordset)
+    $dataReader.Open($query, $connection)
+    Write-Host "Query has been passed"
+    $printedArray = @()
+    while (!$dataReader.EOF) {
+        $request = [Request]::new()
+        $request.requestID = $dataReader.Fields.Item("Request ID").Value
+        $request.type = $dataReader.Fields.Item("Service Type").Value
+        $request.client = $dataReader.Fields.Item("Client Name").Value
+        $request.location = $dataReader.Fields.Item("Location").Value
+        $request.tradie = $dataReader.Fields.Item("Tradie Assigned").Value
+        $request.jobCost = $dataReader.Fields.Item("Job Cost").Value
+        $request.status = $dataReader.Fields.Item("Status").Value
+        $request.createDate = $dataReader.Fields.Item("Create Date").Value
+        $request.dueDate = $dataReader.Fields.Item("Due Date").Value
+        $newRequests += $request
+        if(!$dataReader.BOF) {
+        $dataReader.MoveNext()
+        }
+    }
+
+   #$requestBox.Text = printData -newRequest $newRequests -type "NewRequest"
+
+   
+   $newRequests | ForEach-Object {
+    $formattedRequest = FormatRequest $_
+    $color = "Green"
+    $createDate = [datetime]::ParseExact($_.CreateDate, "MM/dd/yyyy HH:mm:ss", $null)
+    if ($createDate -lt (Get-Date).AddDays(-5)) {
+        $color = "Red"
+    }
+    elseif ($createDate -lt (Get-Date).AddDays(-2)) {
+        $color = "Orange"
+    }
+    
+    $requestBox.AppendText($formattedRequest)
+    if ($requestBox.Text.Length -lt $formattedRequest.Length) {
+    $requestBox.SelectionStart = 0
+    } else {
+        $requestBox.SelectionStart = $requestBox.Text.Length - $formattedRequest.Length
+    }
+    $requestBox.SelectionLength = $formattedRequest.Length
+    $requestBox.SelectionColor = $color
+}
+
+   $idFilter = New-Object System.Windows.Forms.RichTextBox
+
+   $idFilter.Location = New-Object System.Drawing.Size(1024,710)
+
+   $idFilter.Size = New-Object System.Drawing.Size(292,40)
+
+   $idFilter.Font = New-Object System.Drawing.Font ("Arial", 10)
+
+   $idFilter.Text = "Enter ID to accept/counteroffer"
+
+   $idFilter.Add_Click{
+   if ($idFilter.Text -eq "Enter ID to accept/counteroffer") 
+   {
+       $idFilter.Clear()
+   }}
+
+   $idFilter.Add_Leave{
+   if ($idFilter.Text -eq "") 
+   {
+       $idFilter.Text = "Enter ID to accept/counteroffer"
+   }}
+
+   $main_form.Controls.Add($idFilter)
+
+   $requestButton1 = New-Object System.Windows.Forms.Button
+
+   $requestButton1.Location = New-Object System.Drawing.Size(1020,760)
+
+   $requestButton1.Size = New-Object System.Drawing.Size(100,40)
+
+   $requestButton1.Font = New-Object System.Drawing.Font ("Arial", 10)
+
+   $requestButton1.Text = "Accept"
+
+   $requestButton1.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $requestButton1.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $requestButton1.FlatStyle = "Flat"
+
+   $requestButton1.FlatAppearance.BorderSize = 2
+
+   $requestButton1.FlatAppearance.BorderColor = "#000000"
+
+   $requestButton1.Add_Click({
+        AcceptRequest -requestID $idFilter.Text -tradieName $tradieName -requestArray $allRequests -directory $directory
+        class Request {
+        [int]$requestID
+        [String]$client
+        [String]$location
+        [String]$type
+        [String]$tradie
+        [int]$jobCost
+        [String]$status
+        [DateTime]$createDate
+        [DateTime]$dueDate
+        }
+
+       $dirPath = $directory
+        $DbName = "CSIT314 Database.accdb"
+        $Db = Join-Path $dirPath $DbName
+        Write-Host $Db
+        $newRequests1 = @()
+        $connection1 = New-Object -ComObject ADODB.Connection
+        if([Environment]::Is64BitProcess){
+            Write-Host "64Bit version of Powershell"
+            $connection1.Open("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$Db")
+        }
+        else
+        {
+            Write-Host "32Bit of Powershell"
+            $connection1.Open("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=$Db" )
+        }
+        $query1 = "SELECT * FROM NewRequests"
+        Write-Host "Processing SQL query: $query1"
+        $dataReader1 = (New-Object -ComObject ADODB.Recordset)
+        $dataReader1.Open($query1, $connection1)
+        Write-Host "Query has been passed"
+        $printedArray1 = @()
+        while (!$dataReader1.EOF) {
+            $request1 = [Request]::new()
+            $request1.requestID = $dataReader1.Fields.Item("Request ID").Value
+            $request1.type = $dataReader1.Fields.Item("Service Type").Value
+            $request1.client = $dataReader1.Fields.Item("Client Name").Value
+            $request1.location = $dataReader1.Fields.Item("Location").Value
+            $request1.tradie = $dataReader1.Fields.Item("Tradie Assigned").Value
+            $request1.jobCost = $dataReader1.Fields.Item("Job Cost").Value
+            $request1.status = $dataReader1.Fields.Item("Status").Value
+            $request1.createDate = $dataReader1.Fields.Item("Create Date").Value
+            $request1.dueDate = $dataReader1.Fields.Item("Due Date").Value
+            $newRequests1 += $request1
+            if(!$dataReader.BOF) {
+            $dataReader.MoveNext()
+            }
+        }
+
+       #$requestBox.Text = printData -newRequest $newRequests -type "NewRequest"
+
+   
+       $newRequests1 | ForEach-Object {
+        $formattedRequest1 = FormatRequest $_
+        $color1 = "Green"
+        $createDate1 = [datetime]::ParseExact($_.CreateDate, "MM/dd/yyyy HH:mm:ss", $null)
+        if ($createDate1 -lt (Get-Date).AddDays(-5)) {
+            $color1 = "Red"
+        }
+        elseif ($createDate1 -lt (Get-Date).AddDays(-2)) {
+            $color1 = "Orange"
+        }
+    
+        $requestBox.AppendText($formattedRequest1)
+        if ($requestBox.Text.Length -lt $formattedRequest1.Length) {
+        $requestBox.SelectionStart = 0
+        } else {
+            $requestBox.SelectionStart = $requestBox.Text.Length - $formattedRequest1.Length
+        }
+        $requestBox.SelectionLength = $formattedRequest1.Length
+        $requestBox.SelectionColor = $color1
+    }
+   })
+
+   $main_form.Controls.Add($requestButton1)
+
+   $requestButton2 = New-Object System.Windows.Forms.Button
+
+   $requestButton2.Location = New-Object System.Drawing.Size(1125,760)
+
+   $requestButton2.Size = New-Object System.Drawing.Size(200,40)
+
+   $requestButton2.Font = New-Object System.Drawing.Font ("Arial", 10)
+
+   $requestButton2.Text = "Counter-Offer"
+
+   $requestButton2.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $requestButton2.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $requestButton2.FlatStyle = "Flat"
+
+   $requestButton2.FlatAppearance.BorderSize = 2
+
+   $requestButton2.FlatAppearance.BorderColor = "#000000"
+
+   $main_form.Controls.Add($requestButton2)
+
+   $main_form.Controls.Add($textBox)
+
+   $Button = New-Object System.Windows.Forms.Button
+
+   $Button.Location = New-Object System.Drawing.Size(400,10)
+
+   $Button.Size = New-Object System.Drawing.Size(200,40)
+
+   $Button.Font = New-Object System.Drawing.Font ("Arial", 10)
+
+   $Button.Text = "Generate Services"
+
+   $Button.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $Button.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $Button.FlatStyle = "Flat"
+
+   $Button.FlatAppearance.BorderSize = 2
+
+   $Button.FlatAppearance.BorderColor = "#000000"
+
+   $Button.Add_Click({$textBox.Text = GetTradie -directory $directory -value $tradieName})
+
+   $filterbox = New-Object System.Windows.Forms.RichTextBox
+
+   $filterbox.Font = New-Object System.Drawing.Font("Arial",16)
+
+   $filterbox.Location = New-Object System.Drawing.Size(810,50)
+
+   $filterbox.Size = New-Object System.Drawing.Size(200, 40)
+
+   $filterBox.Text = "Enter request ID..."
+
+   $filterBox.Add_Click{
+   if ($filterBox.Text -eq "Enter request ID...") 
+   {
+       $filterBox.Clear()
+   }}
+
+   $filterBox.Add_Leave{
+   if ($filterBox.Text -eq "") 
+   {
+       $filterBox.Text = "Enter Request ID..."
+   }}
+
+   $filterButton = New-Object System.Windows.Forms.Button
+
+   $filterButton.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $filterButton.Location = New-Object System.Drawing.Size(810, 5)
+
+   $filterButton.Size = New-Object System.Drawing.Size (200, 40)
+
+   $filterButton.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $filterButton.Text = "Filter"
+
+   $filterButton.FlatStyle = "Flat"
+
+   $filterButton.FlatAppearance.BorderSize = 2
+
+   $filterButton.FlatAppearance.BorderColor = "#000000"
+
+   $filterButton.Add_Click({$textbox.Text = filterSearch -requests $requestArray -value $filterbox.Text})
+
+   $logout = New-Object System.Windows.Forms.Button
+
+   $logout.Text = 'Logout'
+
+   $logout.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $logout.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $logout.FlatStyle = "Flat"
+
+   $logout.FlatAppearance.BorderSize = 2
+
+   $logout.FlatAppearance.BorderColor = "#000000"
+
+   $logout.Location = New-Object System.Drawing.Size(10,10)
+
+   $logout.Size = New-Object System.Drawing.Size(100,40)
+
+   $logout.Font = New-Object System.Drawing.Font("Arial", 10)
+
+   $logout.Add_Click({
+   $loginGui.Show()
+   $main_form.Close()})
+
+   $account = New-Object System.Windows.Forms.Button
+
+   $account.Text = 'Account'
+
+   $account.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $account.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $account.FlatStyle = "Flat"
+
+   $account.FlatAppearance.BorderSize = 2
+
+   $account.FlatAppearance.BorderColor = "#000000"
+
+   $account.Location = New-Object System.Drawing.Size(120,10)
+
+   $account.Size = New-Object System.Drawing.Size(100,40)
+
+   $account.Font = New-Object System.Drawing.Font("Arial", 10)
+
+   $account.Add_Click({
+   #$tradieArray = @()
+   #$tradieArray = GetTradieData -directory $directory -tradieName $tradieName
+   accountGuiTradie -form $main_form -tradie $tradieName -directory $directory
+   })
+   $main_form.Controls.Add($requestBox)
+
+   $main_form.Controls.Add($account)
+
+   $main_form.Controls.Add($logout)
+
+   $main_form.Controls.Add($filterBox)
+
+   $main_form.Controls.Add($filterButton)
+
+   $main_form.Controls.Add($Button)
+
+   $main_form.ShowDialog()
+}
+
+Function createGui($requestArray, $directory, $tradieArray, $loginGui, $clientArray)
+{
+   Add-Type -assembly System.Windows.Forms
+
+   $main_form = New-Object System.Windows.Forms.Form
+
+   $main_form.Text ='GUI for CSIT314 project'
+
+   $main_form.AutoSize = $true
+
+   $main_form.BackColor = [System.Drawing.Color]::White
+
+   $requestReport = New-Object System.Windows.Forms.Button
+
+   $requestReport.Location = New-Object System.Drawing.Size(590,5)
+
+   $requestReport.Size = New-Object System.Drawing.Size(100,40)
+
+   $requestReport.Font = New-Object System.Drawing.Font ("Arial", 10)
+
+   $requestReport.Text = "Request Report"
+
+   $requestReport.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $requestReport.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $requestReport.FlatStyle = "Flat"
+
+   $requestReport.FlatAppearance.BorderSize = 2
+
+   $requestReport.FlatAppearance.BorderColor = "#000000"
+
+   $requestReport.Add_Click({$requestArray | Export-Excel -Path "C:\Temp\Requests.xlsx"; $requestArray | Out-GridView})
+
+   $tradieReport = New-Object System.Windows.Forms.Button
+
+   $tradieReport.Location = New-Object System.Drawing.Size(480,5)
+
+   $tradieReport.Size = New-Object System.Drawing.Size(100,40)
+
+   $tradieReport.Font = New-Object System.Drawing.Font ("Arial", 10)
+
+   $tradieReport.Text = "Tradie Report"
+
+   $tradieReport.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $tradieReport.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $tradieReport.FlatStyle = "Flat"
+
+   $tradieReport.FlatAppearance.BorderSize = 2
+
+   $tradieReport.FlatAppearance.BorderColor = "#000000"
+
+   $tradieReport.Add_Click({$tradieArray | Export-Excel -path "C:\Temp\Tradies.xlsx"; $tradieArray | Out-Gridview})
+
+   $clientReport = New-Object System.Windows.Forms.Button
+
+   $clientReport.Location = New-Object System.Drawing.Size(370,5)
+
+   $clientReport.Size = New-Object System.Drawing.Size(100,40)
+
+   $clientReport.Font = New-Object System.Drawing.Font ("Arial", 10)
+
+   $clientReport.Text = "Client Report"
+
+   $clientReport.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $clientReport.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $clientReport.FlatStyle = "Flat"
+
+   $clientReport.FlatAppearance.BorderSize = 2
+
+   $clientReport.FlatAppearance.BorderColor = "#000000"
+
+   $clientReport.Add_Click({$clientArray | Export-Excel -path "C:\Temp\Clients.xlsx"; $clientArray | Out-Gridview})
+
+   $main_form.Controls.Add($requestReport)
+
+   $main_form.Controls.Add($tradieReport)
+
+   $main_form.Controls.Add($clientReport)
+
+   $textBox = New-Object System.Windows.Forms.RichTextBox
+
+   $textBox.Font = New-Object System.Drawing.Font("Arial",16)
+
+   $textBox.Multiline = $True;
+
+   $textBox.Location = New-Object System.Drawing.Size(10,100)
+
+   $textBox.Size = New-Object System.Drawing.Size(1000,700)
+
+   $textBox.AutoSize = $true
+
+   $textBox.Scrollbars = "Vertical" 
+
+   $textBox.BorderStyle = 'FixedSingle'
+
+   $textBox.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $main_form.Controls.Add($textBox)
+
+   $Button = New-Object System.Windows.Forms.Button
+
+   $Button.Location = New-Object System.Drawing.Size(700,5)
+
+   $Button.Size = New-Object System.Drawing.Size(100,40)
+
+   $Button.Font = New-Object System.Drawing.Font ("Arial", 10)
+
+   $Button.Text = "Generate Services"
+
+   $Button.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $Button.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $Button.FlatStyle = "Flat"
+
+   $Button.FlatAppearance.BorderSize = 2
+
+   $Button.FlatAppearance.BorderColor = "#000000"
+
+   $Button.Add_Click({createTables -directory $directory})
+
+   $path = Test-Path $directory
+
+   if($path -eq $true)
+   {
+       $Button.Add_Click({$textBox.Text = printData -requests $requestArray -tradieArray $tradieArray -clientArray $clientArray -directory $directory})
+   }
+   else{$Button.Add_Click({$textBox.text = createTables -directory $directory})}
+
+   $filterbox = New-Object System.Windows.Forms.RichTextBox
+
+   $filterbox.Font = New-Object System.Drawing.Font("Arial",16)
+
+   $filterbox.Location = New-Object System.Drawing.Size(810,50)
+
+   $filterbox.Size = New-Object System.Drawing.Size(200, 40)
+
+   $filterBox.Text = "Enter request ID..."
+
+   $filterBox.Add_Click{
+   if ($filterBox.Text -eq "Enter request ID...") 
+   {
+       $filterBox.Clear()
+   }}
+
+   $filterBox.Add_Leave{
+   if ($filterBox.Text -eq "") 
+   {
+       $filterBox.Text = "Enter Request ID..."
+   }}
+
+   $filterButton = New-Object System.Windows.Forms.Button
+
+   $filterButton.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $filterButton.Location = New-Object System.Drawing.Size(810, 5)
+
+   $filterButton.Size = New-Object System.Drawing.Size (200, 40)
+
+   $filterButton.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $filterButton.Text = "Filter"
+
+   $filterButton.FlatStyle = "Flat"
+
+   $filterButton.FlatAppearance.BorderSize = 2
+
+   $filterButton.FlatAppearance.BorderColor = "#000000"
+
+   $filterButton.Add_Click({$textbox.Text = filterSearch -requests $requestArray -value $filterbox.Text -tradieArray $tradieArray})
+
+   $logout = New-Object System.Windows.Forms.Button
+
+   $logout.Text = 'Logout'
+
+   $logout.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $logout.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $logout.FlatStyle = "Flat"
+
+   $logout.FlatAppearance.BorderSize = 2
+
+   $logout.FlatAppearance.BorderColor = "#000000"
+
+   $logout.Location = New-Object System.Drawing.Size(10,10)
+
+   $logout.Size = New-Object System.Drawing.Size(200,40)
+
+   $logout.Font = New-Object System.Drawing.Font("Arial", 10)
+
+   $logout.Add_Click({
+   $loginGui.Show()
+   $main_form.Close()})
+
+   $main_form.Controls.Add($logout)
+
+   $main_form.Controls.Add($filterBox)
+
+   $main_form.Controls.Add($filterButton)
+
+   $main_form.Controls.Add($Button)
+
+   $main_form.ShowDialog()
+}
+
+Function verifyGui()
+{
+   $verifyGui = New-Object System.Windows.Forms.Form
+
+   $verifyGui.Text = "Verify credentials"
+
+   $verifyGui.autosize = $true
+
+   $usernameField = New-Object System.Windows.Forms.TextBox
+
+   $passwordField = New-Object System.Windows.Forms.TextBox
+
+   $usernameLabel = New-Object System.Windows.Forms.Label
+
+   $passwordLabel = New-Object System.Windows.Forms.Label
+
+   $usernameLabel.Text = "Username: "
+
+   $passwordLabel.Text = "Password: "
+
+   $usernameLabel.Font = New-Object System.Drawing.Font("Arial", 10)
+
+   $passwordLabel.Font = New-Object System.Drawing.Font("Arial", 10)
+
+   $passwordLabel.Location = New-Object System.Drawing.Size(50,60)
+
+   $usernameLabel.Location = New-Object System.Drawing.Size(50,120)
+
+   $usernameLabel.Size = New-Object System.Drawing.Size(150,50)
+
+   $passwordLabel.Size = New-Object System.Drawing.Size(150,50)
+
+   $usernameField.Size = New-Object System.Drawing.Size(200,50)
+
+   $passwordField.Size = New-Object System.Drawing.Size(200,50)
+
+   $passwordField.Location = New-Object System.Drawing.Size(200,60)
+   
+   $usernameField.Location = New-Object System.Drawing.Size(200,120)
+
+   $usernameField.Font = New-Object System.Drawing.Font("Arial", 14)
+
+   $passwordField.Font = New-Object System.Drawing.Font("Arial", 14)
+
+   $verifyGui.Controls.Add($usernameLabel)
+
+   $verifyGui.Controls.Add($passwordLabel)
+
+   $verifyGui.Controls.Add($usernameField)
+
+   $verifyGui.Controls.Add($passwordField)
+
+   $verifyGui.ShowDialog()
+}
+
+Function accountGuiTradie($form, $tradie, $directory)
+{
+   $logoutButton = New-Object System.Windows.Forms.Button
+
+   $logoutButton = New-Object System.Windows.Forms.Button
+
+   $logoutButton.Location = New-Object System.Drawing.Size(120,10)
+
+   $logoutButton.Size = New-Object System.Drawing.Size(100,40)
+
+   $logoutButton.Font = New-Object System.Drawing.Font ("Arial", 10)
+
+   $logoutButton.Text = "Exit"
+
+   $logoutButton.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $logoutButton.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $logoutButton.FlatStyle = "Flat"
+
+   $logoutButton.FlatAppearance.BorderSize = 2
+
+   $logoutButton.FlatAppearance.BorderColor = "#000000"
+
+   $logoutButton.Add_Click({
+   $main_form.Close()
+   $form.Show()
+   })
+
+   $main_form = New-Object System.Windows.Forms.Form
+
+   $main_form.Text ='Account Settings'
+
+   $main_form.AutoSize = $true
+
+   $main_form.BackColor = [System.Drawing.Color]::White
+
+   $main_form.Size = New-Object System.Drawing.Size(1000,850)
+
+   $idLabel = New-Object System.Windows.Forms.Label
+
+   $idLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $idLabel.Text = 'User ID: '
+
+   $idLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $idLabel.location = New-Object System.Drawing.Size(170, 140)
+
+   $id = New-Object System.Windows.Forms.TextBox
+
+   $id.Size = New-Object System.Drawing.Size(200, 50)
+
+   $id.location = New-Object System.Drawing.Size(500, 140)
+
+   $nameLabel = New-Object System.Windows.Forms.Label
+
+   $nameLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $nameLabel.Text = 'Display Name: '
+
+   $nameLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $nameLabel.location = New-Object System.Drawing.Size(170, 200)
+
+   $name = New-Object System.Windows.Forms.TextBox
+
+   $name.Size = New-Object System.Drawing.Size(200, 50)
+
+   $name.location = New-Object System.Drawing.Size(500, 200)
+
+   $name.Text = "$tradie"
+
+   $usernameLabel = New-Object System.Windows.Forms.Label
+
+   $usernameLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $usernameLabel.Text = 'Username: '
+
+   $usernameLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $usernameLabel.location = New-Object System.Drawing.Size(170, 260)
+
+   $username = New-Object System.Windows.Forms.TextBox
+
+   $username.PasswordChar = "*"
+
+   $username.Size = New-Object System.Drawing.Size(200, 50)
+
+   $username.location = New-Object System.Drawing.Size(500, 260)
+
+   $passwordLabel = New-Object System.Windows.Forms.Label
+
+   $passwordLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $passwordLabel.Text = 'Password: '
+
+   $passwordLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $passwordLabel.location = New-Object System.Drawing.Size(170, 320)
+
+   $password = New-Object System.Windows.Forms.TextBox
+
+   $password.PasswordChar = "*"
+
+   $password.Size = New-Object System.Drawing.Size(200, 50)
+
+   $password.location = New-Object System.Drawing.Size(500, 320)
+
+   $emailLabel = New-Object System.Windows.Forms.Label
+
+   $emailLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $emailLabel.Text = 'Email Address: '
+
+   $emailLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $emailLabel.location = New-Object System.Drawing.Size(170, 380)
+
+   $email = New-Object System.Windows.Forms.TextBox
+
+   $email.Size = New-Object System.Drawing.Size(200, 50)
+
+   $email.location = New-Object System.Drawing.Size(500, 380)
+
+   $phoneLabel = New-Object System.Windows.Forms.Label
+
+   $phoneLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $phoneLabel.Text = 'Phone Number: '
+
+   $phoneLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $phoneLabel.location = New-Object System.Drawing.Size(170, 440)
+    
+   $phone = New-Object System.Windows.Forms.TextBox
+
+   $phone.Size = New-Object System.Drawing.Size(200, 50)
+
+   $phone.location = New-Object System.Drawing.Size(500, 440)
+
+   $addressLabel = New-Object System.Windows.Forms.Label
+
+   $addressLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $addressLabel.Text = 'Address: '
+
+   $addressLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $addressLabel.location = New-Object System.Drawing.Size(170, 500)
+
+   $address = New-Object System.Windows.Forms.TextBox
+
+   $address.Size = New-Object System.Drawing.Size(200, 50)
+
+   $address.location = New-Object System.Drawing.Size(500, 500)
+
+   $editable = New-Object System.Windows.Forms.CheckBox
+
+   $editable.Location = New-Object System.Drawing.Size(100, 700)
+
+   $editable.Text = 'Edit'
+
+   $editable.ThreeState = $false
+
+   $main_form.Controls.Add($editable)
+
+   $id.Enabled = $false
+   $username.Enabled = $false
+   $password.Enabled = $false
+   $email.Enabled = $false
+   $address.Enabled = $false
+   $phone.Enabled = $false
+   $name.Enabled = $false
+   
+   $main_form.Controls.Add($idLabel)
+
+   $main_form.Controls.Add($nameLabel)
+
+   $main_form.Controls.Add($usernameLabel)
+
+   $main_form.Controls.Add($passwordLabel)
+
+   $main_form.Controls.Add($emailLabel)
+
+   $main_form.Controls.Add($phoneLabel)
+
+   $main_form.Controls.Add($addressLabel)
+
+   $main_form.Controls.Add($id)
+
+   $main_form.Controls.Add($name)
+
+   $main_form.Controls.Add($username)
+
+   $main_form.Controls.Add($password)
+
+   $main_form.Controls.Add($email)
+
+   $main_form.Controls.Add($phone)
+
+   $main_form.Controls.Add($address)
+
+   $main_form.Controls.Add($logoutButton)
+
+   Write-Host "Loading Data..."
+   $dirPath = $directory
+   $DbName = "CSIT314 Database.accdb"
+   $Db = Join-Path $dirPath $DbName
+   $connection = New-Object -ComObject ADODB.Connection
+   if([Environment]::Is64BitProcess){
+       Write-Host "64Bit version of Powershell"
+       $connection.Open("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$Db")
+   }
+   else
+   {
+       Write-Host "32Bit of Powershell"
+       $connection.Open("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=$Db" )
+   }
+   $query = "SELECT * FROM Tradies WHERE [Tradie Name] = '$tradie'"
+   $dataReader = (New-Object -ComObject ADODB.Recordset)
+   $dataReader.Open($query, $connection)
+       $tradieID = $dataReader.Fields.Item("ID").Value
+       $tradieAge = $dataReader.Fields.Item("Age").Value
+       $tradieXp = $dataReader.Fields.Item("Experience").Value
+       $tradieUsername = $dataReader.Fields.Item("Username").Value
+       $tradiePassword = $dataReader.Fields.Item("Password").Value
+   Write-Host "Successfully pulled data from table: Tradies"
+   $dataReader.Close()
+   $connection.Close()
+
+   $id.Text = "$tradieID"
+   $id.Font = New-Object System.Drawing.Font("Arial", 10)
+   $username.Text = "$tradieUsername"
+   $username.Font = New-Object System.Drawing.Font("Arial", 10)
+   $password.Text = "$tradiePassword"
+   $password.Font = New-Object System.Drawing.Font("Arial", 10)
+   $email.Text = "*Enter email*"
+   $email.Font = New-Object System.Drawing.Font("Arial", 10)
+   $phone.Text = "*Enter phone number*"
+   $phone.Font = New-Object System.Drawing.Font("Arial", 10)
+   $address.Text = "*Enter address*"
+   $address.Font = New-Object System.Drawing.Font("Arial", 10)
+
+   $editable.Add_CheckStateChanged({
+   if($editable.Checked -eq $true)
+   {
+       $verifyGui = New-Object System.Windows.Forms.Form
+
+       $verifyGui.Text = "Verify credentials"
+
+       $verifyGui.autosize = $true
+
+       $usernameField = New-Object System.Windows.Forms.TextBox
+
+       $passwordField = New-Object System.Windows.Forms.TextBox
+
+       $usernameLabel = New-Object System.Windows.Forms.Label
+
+       $passwordLabel = New-Object System.Windows.Forms.Label
+
+       $usernameLabel.Text = "Username: "
+
+       $passwordLabel.Text = "Password: "
+
+       $usernameLabel.Font = New-Object System.Drawing.Font("Arial", 10)
+
+       $passwordLabel.Font = New-Object System.Drawing.Font("Arial", 10)
+
+       $passwordLabel.Location = New-Object System.Drawing.Size(50,120)
+
+       $usernameLabel.Location = New-Object System.Drawing.Size(50,60)
+
+       $usernameLabel.Size = New-Object System.Drawing.Size(150,50)
+
+       $passwordLabel.Size = New-Object System.Drawing.Size(150,50)
+
+       $usernameField.Size = New-Object System.Drawing.Size(200,50)
+
+       $passwordField.Size = New-Object System.Drawing.Size(200,50)
+
+       $passwordField.Location = New-Object System.Drawing.Size(200,120)
+   
+       $usernameField.Location = New-Object System.Drawing.Size(200,60)
+
+       $usernameField.Font = New-Object System.Drawing.Font("Arial", 14)
+
+       $passwordField.Font = New-Object System.Drawing.Font("Arial", 14)
+
+       $verifyButton = New-Object System.Windows.Forms.Button
+
+       $verifyButton.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+       $verifyButton.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+       $verifyButton.FlatStyle = "Flat"
+
+       $verifyButton.FlatAppearance.BorderSize = 2
+
+       $verifyButton.FlatAppearance.BorderColor = "#000000"
+       
+       $verifyButton.location = New-Object System.Drawing.Size(300,180)
+
+       $verifyButton.Text = "Verify"
+   
+       $verifyButton.Add_Click({
+           $verifyGui.Hide()
+       })
+
+       $verifyGui.Controls.Add($verifyButton)
+
+       $verifyGui.Controls.Add($usernameLabel)
+
+       $verifyGui.Controls.Add($passwordLabel)
+
+       $verifyGui.Controls.Add($usernameField)
+
+       $verifyGui.Controls.Add($passwordField)
+
+       $verifyGui.ShowDialog()
+   
+   
+       if($passwordField.Text -eq $tradiePassword -and $usernameField.Text -eq $tradieUsername -and $editable.Checked -eq $true)
+       {
+       
+           $username.PasswordChar = 0
+           $password.PasswordChar = 0
+           $username.Enabled = $true
+           $password.Enabled = $true
+           $email.Enabled = $true
+           $address.Enabled = $true
+           $phone.Enabled = $true
+           $name.Enabled = $true
+       }
+       else
+       {
+           $username.PasswordChar = "*"
+           $password.PasswordChar = "*"
+           $id.Enabled = $false
+           $username.Enabled = $false
+           $password.Enabled = $false
+           $email.Enabled = $false
+           $address.Enabled = $false
+           $phone.Enabled = $false
+           $name.Enabled = $false
+       }
+   }
+   })
+
+   $main_form.ShowDialog()
+}
+
+Function accountGuiClient($form, $client, $directory)
+{
+   $logoutButton = New-Object System.Windows.Forms.Button
+
+   $logoutButton = New-Object System.Windows.Forms.Button
+
+   $logoutButton.Location = New-Object System.Drawing.Size(120,10)
+
+   $logoutButton.Size = New-Object System.Drawing.Size(100,40)
+
+   $logoutButton.Font = New-Object System.Drawing.Font ("Arial", 10)
+
+   $logoutButton.Text = "Exit"
+
+   $logoutButton.FlatAppearance.BorderColor = [System.Drawing.Color]::Black
+
+   $logoutButton.BackColor = [System.Drawing.Color]::FromArgb(238, 238, 238)
+
+   $logoutButton.FlatStyle = "Flat"
+
+   $logoutButton.FlatAppearance.BorderSize = 2
+
+   $logoutButton.FlatAppearance.BorderColor = "#000000"
+
+   $logoutButton.Add_Click({
+   $form.Show()
+   $main_form.Close()
+   })
+
+   $main_form = New-Object System.Windows.Forms.Form
+
+   $main_form.Text ='Account Settings'
+
+   $main_form.AutoSize = $true
+
+   $main_form.BackColor = [System.Drawing.Color]::White
+
+   $main_form.Size = New-Object System.Drawing.Size(1000,850)
+
+   $idLabel = New-Object System.Windows.Forms.Label
+
+   $idLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $idLabel.Text = 'User ID: '
+
+   $idLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $idLabel.location = New-Object System.Drawing.Size(170, 140)
+
+   $id = New-Object System.Windows.Forms.TextBox
+
+   $id.Size = New-Object System.Drawing.Size(200, 50)
+
+   $id.location = New-Object System.Drawing.Size(500, 140)
+
+   $nameLabel = New-Object System.Windows.Forms.Label
+
+   $nameLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $nameLabel.Text = 'Display Name: '
+
+   $nameLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $nameLabel.location = New-Object System.Drawing.Size(170, 200)
+
+   $name = New-Object System.Windows.Forms.TextBox
+
+   $name.Size = New-Object System.Drawing.Size(200, 50)
+
+   $name.location = New-Object System.Drawing.Size(500, 200)
+
+   $name.Text = "$tradie"
+
+   $usernameLabel = New-Object System.Windows.Forms.Label
+
+   $usernameLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $usernameLabel.Text = 'Username: '
+
+   $usernameLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $usernameLabel.location = New-Object System.Drawing.Size(170, 260)
+
+   $username = New-Object System.Windows.Forms.TextBox
+
+   $username.PasswordChar = "*"
+
+   $username.Size = New-Object System.Drawing.Size(200, 50)
+
+   $username.location = New-Object System.Drawing.Size(500, 260)
+
+   $passwordLabel = New-Object System.Windows.Forms.Label
+
+   $passwordLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $passwordLabel.Text = 'Password: '
+
+   $passwordLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $passwordLabel.location = New-Object System.Drawing.Size(170, 320)
+
+   $password = New-Object System.Windows.Forms.TextBox
+
+   $password.PasswordChar = "*"
+
+   $password.Size = New-Object System.Drawing.Size(200, 50)
+
+   $password.location = New-Object System.Drawing.Size(500, 320)
+
+   $emailLabel = New-Object System.Windows.Forms.Label
+
+   $emailLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $emailLabel.Text = 'Email Address: '
+
+   $emailLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $emailLabel.location = New-Object System.Drawing.Size(170, 380)
+
+   $email = New-Object System.Windows.Forms.TextBox
+
+   $email.Size = New-Object System.Drawing.Size(200, 50)
+
+   $email.location = New-Object System.Drawing.Size(500, 380)
+
+   $phoneLabel = New-Object System.Windows.Forms.Label
+
+   $phoneLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $phoneLabel.Text = 'Phone Number: '
+
+   $phoneLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $phoneLabel.location = New-Object System.Drawing.Size(170, 440)
+    
+   $phone = New-Object System.Windows.Forms.TextBox
+
+   $phone.Size = New-Object System.Drawing.Size(200, 50)
+
+   $phone.location = New-Object System.Drawing.Size(500, 440)
+
+   $addressLabel = New-Object System.Windows.Forms.Label
+
+   $addressLabel.Font = New-Object System.Drawing.Font("Arial",10)
+
+   $addressLabel.Text = 'Address: '
+
+   $addressLabel.Size = New-Object System.Drawing.Size(200, 50)
+
+   $addressLabel.location = New-Object System.Drawing.Size(170, 500)
+
+   $address = New-Object System.Windows.Forms.TextBox
+
+   $address.Size = New-Object System.Drawing.Size(200, 50)
+
+   $address.location = New-Object System.Drawing.Size(500, 500)
+
+   $editable = New-Object System.Windows.Forms.CheckBox
+
+   $editable.Location = New-Object System.Drawing.Size(100, 700)
+
+   $editable.Text = 'Edit'
+
+   $editable.ThreeState = $false
+
+   $main_form.Controls.Add($editable)
+
+   $id.Enabled = $false
+   $username.Enabled = $false
+   $password.Enabled = $false
+   $email.Enabled = $false
+   $address.Enabled = $false
+   $phone.Enabled = $false
+   $name.Enabled = $false
+   
+   $main_form.Controls.Add($idLabel)
+
+   $main_form.Controls.Add($nameLabel)
+
+   $main_form.Controls.Add($usernameLabel)
+
+   $main_form.Controls.Add($passwordLabel)
+
+   $main_form.Controls.Add($emailLabel)
+
+   $main_form.Controls.Add($phoneLabel)
+
+   $main_form.Controls.Add($addressLabel)
+
+   $main_form.Controls.Add($id)
+
+   $main_form.Controls.Add($name)
+
+   $main_form.Controls.Add($username)
+
+   $main_form.Controls.Add($password)
+
+   $main_form.Controls.Add($email)
+
+   $main_form.Controls.Add($phone)
+
+   $main_form.Controls.Add($address)
+
+   $main_form.Controls.Add($logoutButton)
+
+   Write-Host "Loading Data..."
+   $dirPath = $directory
+   $DbName = "CSIT314 Database.accdb"
+   $Db = Join-Path $dirPath $DbName
+   $connection = New-Object -ComObject ADODB.Connection
+   if([Environment]::Is64BitProcess){
+       Write-Host "64Bit version of Powershell"
+       $connection.Open("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=$Db")
+   }
+   else
+   {
+       Write-Host "32Bit of Powershell"
+       $connection.Open("Provider=Microsoft.Jet.OLEDB.4.0;Data Source=$Db" )
+   }
+   $query = "SELECT * FROM Clients WHERE [Client Name] = '$client'"
+   $dataReader = (New-Object -ComObject ADODB.Recordset)
+   $dataReader.Open($query, $connection)
+       $clientID = $dataReader.Fields.Item("ID").Value
+       $clientAge = $dataReader.Fields.Item("Age").Value
+       $clientLocation = $dataReader.Fields.Item("Location").Value
+       $clientUsername = $dataReader.Fields.Item("Username").Value
+       $clientPassword = $dataReader.Fields.Item("Password").Value
+   Write-Host "Successfully pulled data from table: Clients"
+   $dataReader.Close()
+   $connection.Close()
+
+   $id.Text = "$clientID"
+   $id.Font = New-Object System.Drawing.Font("Arial", 10)
+   $username.Text = "$clientUsername"
+   $username.Font = New-Object System.Drawing.Font("Arial", 10)
+   $password.Text = "$clientPassword"
+   $password.Font = New-Object System.Drawing.Font("Arial", 10)
+   $email.Text = "*Enter email*"
+   $email.Font = New-Object System.Drawing.Font("Arial", 10)
+   $phone.Text = "*Enter phone number*"
+   $phone.Font = New-Object System.Drawing.Font("Arial", 10)
+   $address.Text = "$clientLocation"
+   $address.Font = New-Object System.Drawing.Font("Arial", 10)
+
+   $editable.Add_CheckStateChanged({
+   if($editable.Checked -eq $true)
+   {
+       $verifyGui = New-Object System.Windows.Forms.Form
+
+       $verifyGui.Text = "Verify credentials"
+
+       $verifyGui.autosize = $true
+
+       $usernameField = New-Object System.Windows.Forms.TextBox
+
+       $passwordField = New-Object System.Windows.Forms.TextBox
+
+       $usernameLabel = New-Object System.Windows.Forms.Label
+
+       $passwordLabel = New-Object System.Windows.Forms.Label
+
+       $usernameLabel.Text = "Username: "
+
+       $passwordLabel.Text = "Password: "
+
+       $usernameLabel.Font = New-Object System.Drawing.Font("Arial", 10)
+
+       $passwordLabel.Font = New-Object System.Drawing.Font("Arial", 10)
+
+       $passwordLabel.Location = New-Object System.Drawing.Size(50,60)
+
+       $usernameLabel.Location = New-Object System.Drawing.Size(50,120)
+
+       $usernameLabel.Size = New-Object System.Drawing.Size(150,50)
+
+       $passwordLabel.Size = New-Object System.Drawing.Size(150,50)
+
+       $usernameField.Size = New-Object System.Drawing.Size(200,50)
+
+       $passwordField.Size = New-Object System.Drawing.Size(200,50)
+
+       $passwordField.Location = New-Object System.Drawing.Size(200,60)
+   
+       $usernameField.Location = New-Object System.Drawing.Size(200,120)
+
+       $usernameField.Font = New-Object System.Drawing.Font("Arial", 14)
+
+       $passwordField.Font = New-Object System.Drawing.Font("Arial", 14)
+
+       $verifyButton = New-Object System.Windows.Forms.Button
+
+       $verifyButton.Text = "Verify"
+   
+       $verifyButton.Add_Click({
+           $verifyGui.Hide()
+       })
+
+       $verifyGui.Controls.Add($verifyButton)
+
+       $verifyGui.Controls.Add($usernameLabel)
+
+       $verifyGui.Controls.Add($passwordLabel)
+
+       $verifyGui.Controls.Add($usernameField)
+
+       $verifyGui.Controls.Add($passwordField)
+
+       $verifyGui.ShowDialog()
+   
+   
+       if($passwordField.Text -eq $clientPassword -and $usernameField.Text -eq $clientUsername -and $editable.Checked -eq $true)
+       {
+       
+           $username.PasswordChar = 0
+           $password.PasswordChar = 0
+           $username.Enabled = $true
+           $password.Enabled = $true
+           $email.Enabled = $true
+           $address.Enabled = $true
+           $phone.Enabled = $true
+           $name.Enabled = $true
+       }
+       else
+       {
+           $username.PasswordChar = "*"
+           $password.PasswordChar = "*"
+           $id.Enabled = $false
+           $username.Enabled = $false
+           $password.Enabled = $false
+           $email.Enabled = $false
+           $address.Enabled = $false
+           $phone.Enabled = $false
+           $name.Enabled = $false
+       }
+   }
+   })
+
+   $main_form.ShowDialog()
+}
+
+executeActivity -count $count
